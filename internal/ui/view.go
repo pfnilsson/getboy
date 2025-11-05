@@ -7,11 +7,11 @@ import (
 func (m model) View() string {
 	// ===== Sidebar ============================================================
 	sb := m.sidebar.View()
-	sbBox := TitledPane(
+	sbBox := titledPane(
 		sb,
 		m.sidebarWidth(),
 		m.pane == paneSidebar,
-		PaneBadge(1, m.pane == paneSidebar),
+		paneBadge(1, m.pane == paneSidebar),
 		"Requests",
 	)
 
@@ -23,21 +23,21 @@ func (m model) View() string {
 	bodyTitle := titleStyle().Faint(true).Render("Body") // inner section; keep as-is
 	ed := lipgloss.JoinVertical(lipgloss.Left, edTop, bodyTitle, m.body.View())
 
-	edBox := TitledPane(
+	edBox := titledPane(
 		ed,
 		m.rightPaneWidth(),
 		m.pane == paneEditor,
-		PaneBadge(2, m.pane == paneEditor),
+		paneBadge(2, m.pane == paneEditor),
 		"Request",
 	)
 
 	// ===== Response ===========================================================
 	resp := lipgloss.JoinVertical(lipgloss.Left, m.view.View())
-	respBox := TitledPane(
+	respBox := titledPane(
 		resp,
 		m.rightPaneWidth(),
 		m.pane == paneResponse,
-		PaneBadge(3, m.pane == paneResponse),
+		paneBadge(3, m.pane == paneResponse),
 		"Response",
 	)
 

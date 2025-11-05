@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/pfnilsson/getboy/internal/ui/theme"
 )
 
 type model struct {
@@ -39,12 +39,12 @@ func New() tea.Model {
 
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.
-		Foreground(lipgloss.Color(currentTheme.Palette.Mauve)).
-		BorderForeground(lipgloss.Color(currentTheme.Palette.Mauve))
+		Foreground(theme.Current.ListSelectedText).
+		BorderForeground(theme.Current.ListSelectedBorder)
 
 	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.
-		Foreground(lipgloss.Color(currentTheme.Palette.Mauve)).
-		BorderForeground(lipgloss.Color(currentTheme.Palette.Mauve))
+		Foreground(theme.Current.ListSelectedText).
+		BorderForeground(theme.Current.ListSelectedBorder)
 
 	sb := list.New(items, delegate, 24, 20)
 	sb.SetShowTitle(false)
