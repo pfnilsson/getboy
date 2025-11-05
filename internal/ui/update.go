@@ -24,6 +24,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "shift+tab":
 			m.prevPane()
 			return m, nil
+		case "1":
+			m.pane = paneSidebar
+			m.applyFocus()
+			return m, nil
+		case "2":
+			m.pane = paneEditor
+			m.applyFocus()
+			return m, nil
+		case "3":
+			m.pane = paneResponse
+			m.applyFocus()
+			return m, nil
 		case "enter":
 			if m.pane == paneSidebar {
 				if it, ok := m.sidebar.SelectedItem().(reqItem); ok {
@@ -85,7 +97,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status = "Request failed"
 			return m, nil
 		}
-		m.view.SetContent(msg.Body)
+		m.view.SetContent(renderResponse(msg.Body))
 		m.status = msg.Status
 		return m, nil
 	}
