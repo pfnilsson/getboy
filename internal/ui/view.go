@@ -5,9 +5,6 @@ import (
 )
 
 func (m model) View() string {
-	// App header
-	header := headerStyle().Render("getboy")
-
 	// ===== Sidebar ============================================================
 	sb := m.sidebar.View()
 	sbBox := TitledPane(
@@ -58,5 +55,5 @@ func (m model) View() string {
 
 	// ===== Layout =============================================================
 	content := lipgloss.JoinHorizontal(lipgloss.Top, sbBox, right)
-	return lipgloss.JoinVertical(lipgloss.Left, header, content, footer)
+	return lipgloss.JoinVertical(lipgloss.Left, content, footer)
 }

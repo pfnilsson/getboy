@@ -1,7 +1,7 @@
 package ui
 
 func (m *model) recomputeLayout() {
-	contentHeight := max(m.height-2, 6)
+	contentHeight := max(m.height-1, 6)
 
 	sidebarWidth := m.sidebarWidth()
 	// Account for 4 chars: 2 for sidebar borders + 2 for right pane borders
