@@ -55,8 +55,8 @@ func CatppuccinMocha() Theme {
 	return Theme{
 		Name:           "catppuccin-mocha",
 		Palette:        p,
-		BorderActive:   lipgloss.Color(p.Mauve),
-		BorderInactive: lipgloss.Color(p.Overlay0),
+		BorderActive:   lipgloss.Color(p.Peach),
+		BorderInactive: lipgloss.Color(p.Blue),
 		Title:          lipgloss.Color(p.Blue),
 		Header:         lipgloss.Color(p.Text),
 		Status:         lipgloss.Color(p.Subtext0),
@@ -76,11 +76,6 @@ func bestFormatter() string {
 		return "terminal256"
 	}
 	return "terminal"
-}
-
-// Lip Gloss style helpers (read from currentTheme)
-func headerStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Bold(true).Foreground(currentTheme.Header)
 }
 
 func statusStyle() lipgloss.Style {
