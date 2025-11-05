@@ -47,7 +47,7 @@ func New() tea.Model {
 		BorderForeground(lipgloss.Color(currentTheme.Palette.Mauve))
 
 	sb := list.New(items, delegate, 24, 20)
-	sb.Title = "Requests"
+	sb.SetShowTitle(false)
 	sb.SetShowHelp(false)
 	sb.SetFilteringEnabled(true)
 	sb.SetShowStatusBar(false)
