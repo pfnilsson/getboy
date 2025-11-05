@@ -55,7 +55,7 @@ func topLineStyle(focused bool) lipgloss.Style {
 }
 
 func paneBadge(n int, focused bool) string {
-	return topLineStyle(focused).Faint(!focused).Render(fmt.Sprintf("[%d]", n))
+	return fmt.Sprintf("[%d]", n)
 }
 
 func titledPane(content string, width int, focused bool, leftBadge string, leftTitle string) string {
@@ -75,7 +75,7 @@ func titledPane(content string, width int, focused bool, leftBadge string, leftT
 
 	// Style labels with the border color, so they "follow" focus.
 	if leftBadge != "" {
-		leftBadge = border.Faint(!focused).Render(leftBadge)
+		leftBadge = border.Bold(true).Render(leftBadge)
 	}
 	if leftTitle != "" {
 		leftTitle = border.Bold(true).Render(leftTitle)
