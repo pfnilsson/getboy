@@ -4,7 +4,8 @@ func (m *model) recomputeLayout() {
 	contentHeight := max(m.height-2, 6)
 
 	sidebarWidth := m.sidebarWidth()
-	rightWidth := max(m.width-sidebarWidth-1, 30)
+	// Account for 4 chars: 2 for sidebar borders + 2 for right pane borders
+	rightWidth := max(m.width-sidebarWidth-4, 30)
 
 	editorHeight := contentHeight / 2
 	respHeight := contentHeight - editorHeight
@@ -26,7 +27,8 @@ func (m *model) recomputeLayout() {
 
 func (m model) rightPaneWidth() int {
 	sidebarW := m.sidebarWidth()
-	width := max(m.width-sidebarW-1, 30)
+	// Account for 4 chars: 2 for sidebar borders + 2 for right pane borders
+	width := max(m.width-sidebarW-4, 30)
 	return width
 }
 

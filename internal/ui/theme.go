@@ -25,7 +25,7 @@ type Theme struct {
 	ChromaStyle    string // name registered with chroma
 }
 
-// Build the Catppuccin Mocha theme and register its chroma style.
+// CatppuccinMocha theme
 func CatppuccinMocha() Theme {
 	p := CatppuccinPalette{
 		Text: "#cdd6f4", Subtext0: "#a6adc8", Overlay0: "#6c7086",
