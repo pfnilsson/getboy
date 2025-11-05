@@ -54,7 +54,7 @@ func topLineStyle(focused bool) lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(col)
 }
 
-func paneBadge(n int, focused bool) string {
+func paneBadge(n int) string {
 	return fmt.Sprintf("[%d]", n)
 }
 

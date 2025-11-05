@@ -11,7 +11,7 @@ func (m model) View() string {
 		sb,
 		m.sidebarWidth(),
 		m.pane == paneSidebar,
-		paneBadge(1, m.pane == paneSidebar),
+		paneBadge(1),
 		"Requests",
 	)
 
@@ -27,7 +27,7 @@ func (m model) View() string {
 		ed,
 		m.rightPaneWidth(),
 		m.pane == paneEditor,
-		paneBadge(2, m.pane == paneEditor),
+		paneBadge(2),
 		"Request",
 	)
 
@@ -37,7 +37,7 @@ func (m model) View() string {
 		resp,
 		m.rightPaneWidth(),
 		m.pane == paneResponse,
-		paneBadge(3, m.pane == paneResponse),
+		paneBadge(3),
 		"Response",
 	)
 

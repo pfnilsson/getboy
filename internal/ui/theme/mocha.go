@@ -6,40 +6,47 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// palette defines the Catppuccin Mocha color palette
+type palette struct {
+	text, subtext0, overlay0            string
+	blue, sapphire, green, peach, mauve string
+}
+
 // Mocha returns the Catppuccin Mocha theme
 func Mocha() Theme {
-	p := Palette{
-		Text: "#cdd6f4", Subtext0: "#a6adc8", Overlay0: "#6c7086",
-		Surface0: "#313244", Surface1: "#45475a",
-		Base: "#1e1e2e", Mantle: "#181825", Crust: "#11111b",
-		Blue: "#89b4fa", Lavender: "#b4befe", Sapphire: "#74c7ec", Sky: "#89dceb",
-		Teal: "#94e2d5", Green: "#a6e3a1", Yellow: "#f9e2af", Peach: "#fab387",
-		Maroon: "#eba0ac", Red: "#f38ba8", Mauve: "#cba6f7", Flamingo: "#f2cdcd",
-		Pink: "#f5c2e7", Rosewater: "#f5e0dc",
+	p := palette{
+		text:     "#cdd6f4",
+		subtext0: "#a6adc8",
+		overlay0: "#6c7086",
+		blue:     "#89b4fa",
+		sapphire: "#74c7ec",
+		green:    "#a6e3a1",
+		peach:    "#fab387",
+		mauve:    "#cba6f7",
 	}
 
 	m := chroma.MustNewStyle("catppuccin-mocha", chroma.StyleEntries{
-		chroma.Text:        p.Text,
-		chroma.Comment:     "italic " + p.Overlay0,
-		chroma.Punctuation: p.Subtext0,
-		chroma.NameTag:     p.Blue,  // JSON keys
-		chroma.String:      p.Green, // values
-		chroma.Number:      p.Peach,
-		chroma.Literal:     p.Peach,
-		chroma.Keyword:     p.Mauve,
-		chroma.Operator:    p.Sapphire,
+		chroma.Text:        p.text,
+		chroma.Comment:     "italic " + p.overlay0,
+		chroma.Punctuation: p.subtext0,
+		chroma.NameTag:     p.blue,  // JSON keys
+		chroma.String:      p.green, // values
+		chroma.Number:      p.peach,
+		chroma.Literal:     p.peach,
+		chroma.Keyword:     p.mauve,
+		chroma.Operator:    p.sapphire,
 	})
 	styles.Register(m)
 
 	return Theme{
 		Name:               "catppuccin-mocha",
-		BorderActive:       lipgloss.Color(p.Peach),
-		BorderInactive:     lipgloss.Color(p.Blue),
-		Title:              lipgloss.Color(p.Blue),
-		Header:             lipgloss.Color(p.Text),
-		Status:             lipgloss.Color(p.Subtext0),
-		ListSelectedText:   lipgloss.Color(p.Mauve),
-		ListSelectedBorder: lipgloss.Color(p.Mauve),
+		BorderActive:       lipgloss.Color(p.peach),
+		BorderInactive:     lipgloss.Color(p.blue),
+		Title:              lipgloss.Color(p.blue),
+		Header:             lipgloss.Color(p.text),
+		Status:             lipgloss.Color(p.subtext0),
+		ListSelectedText:   lipgloss.Color(p.mauve),
+		ListSelectedBorder: lipgloss.Color(p.mauve),
 		ChromaStyle:        "catppuccin-mocha",
 	}
 }
