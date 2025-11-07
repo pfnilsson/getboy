@@ -24,6 +24,7 @@ type model struct {
 
 	pane       focusPane
 	editorPart editorFocus
+	activeTab  requestTab
 
 	status  string
 	loading bool
@@ -73,13 +74,14 @@ func New() tea.Model {
 	vp.SetContent("Response will appear here…")
 
 	return model{
-		sidebar: sb,
-		method:  mth,
-		url:     u,
-		body:    t,
-		view:    vp,
-		pane:    paneSidebar,
-		status:  "tab: switch panes  •  enter: run  •  j/k: move  •  q: quit",
+		sidebar:   sb,
+		method:    mth,
+		url:       u,
+		body:      t,
+		view:      vp,
+		pane:      paneSidebar,
+		activeTab: tabOverview,
+		status:    "tab: switch panes  •  [/]: tabs  •  enter: run  •  j/k: move  •  q: quit",
 	}
 }
 
@@ -103,6 +105,18 @@ func (m *model) nextEditorPart() {
 func (m *model) prevEditorPart() {
 	m.editorPart = (m.editorPart + 2) % 3
 	m.applyFocus()
+}
+
+func (m *model) nextTab() {
+	m.activeTab = (m.activeTab + 1) % 3
+}
+
+func (m *model) prevTab() {
+	m.activeTab = (m.activeTab + 2) % 3
+}
+
+func (m *model) setTab(tab requestTab) {
+	m.activeTab = tab
 }
 
 func (m *model) applyFocus() {

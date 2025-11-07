@@ -10,6 +10,7 @@ type Theme struct {
 	Title              lipgloss.Color
 	Header             lipgloss.Color
 	Status             lipgloss.Color
+	TabActive          lipgloss.Color
 	ListSelectedText   lipgloss.Color
 	ListSelectedBorder lipgloss.Color
 	ChromaStyle        string // name registered with chroma

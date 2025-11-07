@@ -16,6 +16,14 @@ const (
 	edBody
 )
 
+type requestTab int
+
+const (
+	tabOverview requestTab = iota
+	tabHeaders
+	tabBody
+)
+
 type reqItem struct {
 	title  string
 	desc   string

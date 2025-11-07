@@ -280,6 +280,54 @@ func TestMinimumTerminalSize(t *testing.T) {
 	t.Logf("Layout: sidebar=%d, right=%d, borders=4, total=%d", sidebarW, rightW, totalUsed)
 }
 
+// TestEditorContentFitsInPane tests that editor content doesn't overflow
+func TestEditorContentFitsInPane(t *testing.T) {
+	tests := []struct {
+		name   string
+		width  int
+		height int
+	}{
+		{"standard", 120, 40},
+		{"tall", 100, 80},
+		{"short", 120, 20},
+		{"minimum", 66, 20},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := New().(model)
+			updated, _ := m.Update(tea.WindowSizeMsg{Width: tt.width, Height: tt.height})
+			m = updated.(model)
+
+			contentHeight := max(m.height-1, 6)
+			editorHeight := contentHeight / 2
+			if editorHeight < 5 {
+				editorHeight = 5
+			}
+
+			// Calculate the lines used in the editor view (tabs are now in title bar)
+			methodURLLines := 1   // method + URL row
+			bodyTitleLines := 1   // "Body" title
+			bodyContentLines := m.body.Height()
+
+			totalEditorLines := methodURLLines + bodyTitleLines + bodyContentLines
+
+			// Total should not exceed allocated height (with some margin for borders/padding)
+			if totalEditorLines > editorHeight {
+				t.Errorf("editor content (%d lines) exceeds allocated height (%d lines)",
+					totalEditorLines, editorHeight)
+				t.Logf("  method/URL: %d, body title: %d, body content: %d",
+					methodURLLines, bodyTitleLines, bodyContentLines)
+			}
+
+			// Body height should never be negative or zero
+			if m.body.Height() < 1 {
+				t.Errorf("body height = %d, should be at least 1", m.body.Height())
+			}
+		})
+	}
+}
+
 // TestLayoutRightPaneScales tests that right pane scales with window width
 func TestLayoutRightPaneScales(t *testing.T) {
 	// Test that right pane gets wider as window gets wider

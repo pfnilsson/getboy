@@ -68,12 +68,25 @@ func TestViewEditor(t *testing.T) {
 		t.Error("editor view does not contain badge [2]")
 	}
 
-	// Should contain labels
-	if !strings.Contains(editorView, "Method:") {
-		t.Error("editor view does not contain 'Method:' label")
+	// Should contain tabs in title bar
+	if !strings.Contains(editorView, "Overview") {
+		t.Error("editor view does not contain 'Overview' tab")
 	}
-	if !strings.Contains(editorView, "URL:") {
-		t.Error("editor view does not contain 'URL:' label")
+	if !strings.Contains(editorView, "Headers") {
+		t.Error("editor view does not contain 'Headers' tab")
+	}
+	if !strings.Contains(editorView, "Body") {
+		t.Error("editor view does not contain 'Body' tab")
+	}
+
+	// Should contain labels (when on overview tab)
+	if m.activeTab == tabOverview {
+		if !strings.Contains(editorView, "Method:") {
+			t.Error("editor view does not contain 'Method:' label")
+		}
+		if !strings.Contains(editorView, "URL:") {
+			t.Error("editor view does not contain 'URL:' label")
+		}
 	}
 }
 

@@ -59,6 +59,10 @@ func paneBadge(n int) string {
 }
 
 func titledPane(content string, width int, focused bool, leftBadge string, leftTitle string) string {
+	return titledPaneWithTabs(content, width, focused, leftBadge, leftTitle, nil, -1)
+}
+
+func titledPaneWithTabs(content string, width int, focused bool, leftBadge string, leftTitle string, tabs []string, activeTab int) string {
 	st := paneStyle(focused).Width(width)
 
 	// Body without top border — we synthesize that ourselves.
@@ -87,7 +91,34 @@ func titledPane(content string, width int, focused bool, leftBadge string, leftT
 		left += border.Render(" ") + leftBadge + border.Render(" "+h)
 	}
 	if leftTitle != "" {
-		left += border.Render(" ") + leftTitle + border.Render(" ")
+		left += border.Render(" ") + leftTitle
+	}
+
+	// Add tabs if provided
+	var tabsRendered string
+	if len(tabs) > 0 {
+		var tabParts []string
+		for i, tab := range tabs {
+			if i > 0 {
+				// Add separator between tabs with more spacing
+				sepStyle := lipgloss.NewStyle().Foreground(theme.Current.Status)
+				tabParts = append(tabParts, sepStyle.Render(" - "))
+			}
+			isActive := i == activeTab
+			var style lipgloss.Style
+			if isActive {
+				// Active tab uses lavender/mauve color
+				style = lipgloss.NewStyle().Bold(true).Foreground(theme.Current.TabActive)
+			} else {
+				// Inactive tab is faint
+				style = lipgloss.NewStyle().Faint(true).Foreground(theme.Current.Status)
+			}
+			tabParts = append(tabParts, style.Render(tab))
+		}
+		tabsRendered = lipgloss.JoinHorizontal(lipgloss.Top, tabParts...)
+		left += border.Render(" "+h+" ") + tabsRendered + border.Render(" ")
+	} else if leftTitle != "" {
+		left += border.Render(" ")
 	}
 
 	// Build right side with border style.

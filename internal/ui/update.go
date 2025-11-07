@@ -74,6 +74,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "down", "j":
 				m.nextEditorPart()
 				return m, nil
+			case "[", "left":
+				m.prevTab()
+				return m, nil
+			case "]", "right":
+				m.nextTab()
+				return m, nil
 			}
 			switch m.editorPart {
 			case edMethod:

@@ -45,6 +45,7 @@ func Mocha() Theme {
 		Title:              lipgloss.Color(p.blue),
 		Header:             lipgloss.Color(p.text),
 		Status:             lipgloss.Color(p.subtext0),
+		TabActive:          lipgloss.Color(p.mauve),
 		ListSelectedText:   lipgloss.Color(p.mauve),
 		ListSelectedBorder: lipgloss.Color(p.mauve),
 		ChromaStyle:        "catppuccin-mocha",
