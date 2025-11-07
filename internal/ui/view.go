@@ -5,41 +5,10 @@ import (
 )
 
 func (m model) View() string {
-	// ===== Sidebar ============================================================
-	sb := m.sidebar.View()
-	sbBox := titledPane(
-		sb,
-		m.sidebarWidth(),
-		m.pane == paneSidebar,
-		paneBadge(1),
-		"Requests",
-	)
-
-	// ===== Editor (Request) ===================================================
-	methodView := lipgloss.NewStyle().Width(10).Render("Method: " + m.method.View())
-	urlView := lipgloss.NewStyle().Width(m.rightPaneWidth() - 12).Render("URL: " + m.url.View())
-	edTop := lipgloss.JoinHorizontal(lipgloss.Top, methodView, urlView)
-
-	bodyTitle := titleStyle().Faint(true).Render("Body") // inner section; keep as-is
-	ed := lipgloss.JoinVertical(lipgloss.Left, edTop, bodyTitle, m.body.View())
-
-	edBox := titledPane(
-		ed,
-		m.rightPaneWidth(),
-		m.pane == paneEditor,
-		paneBadge(2),
-		"Request",
-	)
-
-	// ===== Response ===========================================================
-	resp := lipgloss.JoinVertical(lipgloss.Left, m.view.View())
-	respBox := titledPane(
-		resp,
-		m.rightPaneWidth(),
-		m.pane == paneResponse,
-		paneBadge(3),
-		"Response",
-	)
+	// Render each pane using dedicated view functions
+	sbBox := m.viewSidebar()
+	edBox := m.viewEditor()
+	respBox := m.viewResponse()
 
 	right := lipgloss.JoinVertical(lipgloss.Left, edBox, respBox)
 
