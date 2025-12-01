@@ -34,7 +34,7 @@ func (m model) viewEditor() string {
 	return edBox
 }
 
-// viewOverviewTab renders the overview tab (method, URL, body)
+// viewOverviewTab renders the overview tab (method, URL)
 func (m model) viewOverviewTab() string {
 	selectedStyle := lipgloss.NewStyle().Foreground(theme.Current.ListSelectedText)
 	normalStyle := lipgloss.NewStyle()
@@ -42,36 +42,43 @@ func (m model) viewOverviewTab() string {
 	// Determine which field is selected (when in editor pane but not insert mode)
 	methodStyle := normalStyle
 	urlStyle := normalStyle
-	bodyStyle := normalStyle
 	methodPrefix := "  "
 	urlPrefix := "  "
-	bodyPrefix := "  "
+	methodSelected := false
 
-	if m.pane == paneEditor && !m.insertMode {
+	if m.pane == paneEditor && m.activeTab == tabOverview {
 		switch m.editorPart {
 		case edMethod:
-			methodPrefix = "> "
-			methodStyle = selectedStyle
+			methodSelected = true
+			if !m.insertMode {
+				methodPrefix = "> "
+				methodStyle = selectedStyle
+			}
 		case edURL:
-			urlPrefix = "> "
-			urlStyle = selectedStyle
-		case edBody:
-			bodyPrefix = "> "
-			bodyStyle = selectedStyle
+			if !m.insertMode {
+				urlPrefix = "> "
+				urlStyle = selectedStyle
+			}
 		}
 	}
 
 	methodLabel := methodStyle.Render(methodPrefix + "Method: ")
-	urlLabel := urlStyle.Render(urlPrefix + "URL: ")
+	urlLabel := urlStyle.Render(urlPrefix + "URL:    ")
 
-	methodView := lipgloss.NewStyle().Width(12).Render(methodLabel + m.method.View())
-	urlView := lipgloss.NewStyle().Width(m.rightPaneWidth() - 14).Render(urlLabel + m.url.View())
-	edTop := lipgloss.JoinHorizontal(lipgloss.Top, methodView, urlView)
+	// Render method as a dropdown with arrows
+	methodValue := m.methodValue()
+	var methodDisplay string
+	if methodSelected && m.insertMode {
+		// Show arrows when editing (vertical arrows for j/k navigation)
+		methodDisplay = selectedStyle.Render("▲ " + methodValue + " ▼")
+	} else {
+		methodDisplay = methodValue
+	}
 
-	bodyTitle := bodyStyle.Render(bodyPrefix + "Body")
-	bodyView := m.body.View()
+	methodLine := methodLabel + methodDisplay
+	urlLine := urlLabel + m.url.View()
 
-	return lipgloss.JoinVertical(lipgloss.Left, edTop, bodyTitle, bodyView)
+	return lipgloss.JoinVertical(lipgloss.Left, methodLine, urlLine)
 }
 
 // viewHeadersTab renders the headers tab (placeholder for now)
@@ -81,9 +88,21 @@ func (m model) viewHeadersTab() string {
 		Render("Headers tab - coming soon...")
 }
 
-// viewBodyTab renders the body tab (placeholder for now)
+// viewBodyTab renders the body tab with the request body textarea
 func (m model) viewBodyTab() string {
-	return lipgloss.NewStyle().
-		Faint(true).
-		Render("Body tab - coming soon...")
+	selectedStyle := lipgloss.NewStyle().Foreground(theme.Current.ListSelectedText)
+	normalStyle := lipgloss.NewStyle()
+
+	bodyStyle := normalStyle
+	bodyPrefix := "  "
+
+	if m.pane == paneEditor && !m.insertMode && m.activeTab == tabBody {
+		bodyPrefix = "> "
+		bodyStyle = selectedStyle
+	}
+
+	bodyTitle := bodyStyle.Render(bodyPrefix + "Body")
+	bodyView := m.body.View()
+
+	return lipgloss.JoinVertical(lipgloss.Left, bodyTitle, bodyView)
 }

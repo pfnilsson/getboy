@@ -181,15 +181,13 @@ func TestLayoutComponentWidths(t *testing.T) {
 
 	rightWidth := m.rightPaneWidth()
 
-	// URL + Method should fit within right pane (with some margin for labels)
-	// method.Width (8) + "Method: " + url.Width + "URL: " + spacing should fit
-	methodTotal := 10 + m.method.Width // ~18
-	urlTotal := 6 + m.url.Width        // url.Width + "URL: "
+	// URL should fit within right pane (with margin for label)
+	// URL is now on its own line: "  URL:    " prefix (~14 chars) + url.Width
+	urlTotal := 14 + m.url.Width
 
-	totalEditorTop := methodTotal + urlTotal
-	if totalEditorTop > rightWidth+10 { // +10 buffer for padding
-		t.Errorf("editor top row width (%d) exceeds right pane width (%d)",
-			totalEditorTop, rightWidth)
+	if urlTotal > rightWidth+10 { // +10 buffer for padding
+		t.Errorf("URL line width (%d) exceeds right pane width (%d)",
+			urlTotal, rightWidth)
 	}
 
 	// Body should fit within right pane (accounting for padding)

@@ -29,10 +29,6 @@ func paneBaseStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
 }
 
-func titleStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Bold(true).Foreground(theme.Current.Title)
-}
-
 func activeBorder() lipgloss.Color   { return theme.Current.BorderActive }
 func inactiveBorder() lipgloss.Color { return theme.Current.BorderInactive }
 func chromaStyle() string            { return theme.Current.ChromaStyle }

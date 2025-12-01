@@ -167,16 +167,17 @@ func TestViewEditorSelectionIndicator(t *testing.T) {
 	m = updated.(model)
 	m.pane = paneEditor
 	m.insertMode = false
-	m.editorPart = edMethod
 
+	// Test overview tab - method selection
+	m.activeTab = tabOverview
+	m.editorPart = edMethod
 	editorView := m.viewOverviewTab()
 
-	// Should contain selection indicator for method
 	if !strings.Contains(editorView, "> Method:") {
 		t.Error("editor view does not show selection indicator for method")
 	}
 
-	// Change selection to URL
+	// Test overview tab - URL selection
 	m.editorPart = edURL
 	editorView = m.viewOverviewTab()
 
@@ -184,12 +185,13 @@ func TestViewEditorSelectionIndicator(t *testing.T) {
 		t.Error("editor view does not show selection indicator for URL")
 	}
 
-	// Change selection to body
+	// Test body tab - body selection
+	m.activeTab = tabBody
 	m.editorPart = edBody
-	editorView = m.viewOverviewTab()
+	bodyView := m.viewBodyTab()
 
-	if !strings.Contains(editorView, "> Body") {
-		t.Error("editor view does not show selection indicator for body")
+	if !strings.Contains(bodyView, "> Body") {
+		t.Error("body tab does not show selection indicator for body")
 	}
 }
 
@@ -199,6 +201,7 @@ func TestViewNoSelectionIndicatorInInsertMode(t *testing.T) {
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = updated.(model)
 	m.pane = paneEditor
+	m.activeTab = tabOverview
 	m.insertMode = true
 	m.editorPart = edMethod
 
@@ -216,6 +219,7 @@ func TestViewNoSelectionIndicatorInOtherPanes(t *testing.T) {
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = updated.(model)
 	m.pane = paneSidebar
+	m.activeTab = tabOverview
 	m.insertMode = false
 	m.editorPart = edMethod
 

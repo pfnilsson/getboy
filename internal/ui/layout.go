@@ -17,8 +17,7 @@ func (m *model) recomputeLayout() {
 	}
 
 	m.sidebar.SetSize(sidebarWidth-2, contentHeight-2)
-	m.method.Width = 8
-	m.url.Width = rightWidth - 18
+	m.url.Width = rightWidth - 14 // Account for "  URL:    " prefix
 	m.body.SetWidth(rightWidth - 4)
 	m.body.SetHeight(editorHeight - 4)
 	m.view.Width = rightWidth - 4

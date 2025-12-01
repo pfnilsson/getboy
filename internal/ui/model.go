@@ -11,16 +11,19 @@ import (
 	"github.com/pfnilsson/getboy/internal/ui/theme"
 )
 
+// HTTP methods available in the dropdown
+var httpMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+
 type model struct {
 	width  int
 	height int
 
 	sidebar list.Model
 
-	method textinput.Model
-	url    textinput.Model
-	body   textarea.Model
-	view   viewport.Model
+	methodIdx int // index into httpMethods
+	url       textinput.Model
+	body      textarea.Model
+	view      viewport.Model
 
 	pane       focusPane
 	editorPart editorFocus
@@ -30,6 +33,36 @@ type model struct {
 	status  string
 	loading bool
 	err     error
+}
+
+// methodValue returns the currently selected HTTP method
+func (m model) methodValue() string {
+	if m.methodIdx >= 0 && m.methodIdx < len(httpMethods) {
+		return httpMethods[m.methodIdx]
+	}
+	return "GET"
+}
+
+// setMethod sets the method by name, defaulting to GET if not found
+func (m *model) setMethod(method string) {
+	method = strings.ToUpper(strings.TrimSpace(method))
+	for i, meth := range httpMethods {
+		if meth == method {
+			m.methodIdx = i
+			return
+		}
+	}
+	m.methodIdx = 0 // Default to GET
+}
+
+// nextMethod cycles to the next HTTP method
+func (m *model) nextMethod() {
+	m.methodIdx = (m.methodIdx + 1) % len(httpMethods)
+}
+
+// prevMethod cycles to the previous HTTP method
+func (m *model) prevMethod() {
+	m.methodIdx = (m.methodIdx + len(httpMethods) - 1) % len(httpMethods)
 }
 
 func New() tea.Model {
@@ -54,12 +87,6 @@ func New() tea.Model {
 	sb.SetFilteringEnabled(true)
 	sb.SetShowStatusBar(false)
 
-	mth := textinput.New()
-	mth.Placeholder = "GET"
-	mth.CharLimit = 10
-	mth.Width = 8
-	mth.Prompt = ""
-
 	u := textinput.New()
 	u.Placeholder = "https://example.com"
 	u.CharLimit = 2048
@@ -72,7 +99,6 @@ func New() tea.Model {
 	t.ShowLineNumbers = false
 
 	// Ensure all inputs start blurred (not in insert mode)
-	mth.Blur()
 	u.Blur()
 	t.Blur()
 
@@ -81,13 +107,13 @@ func New() tea.Model {
 
 	return model{
 		sidebar:   sb,
-		method:    mth,
+		methodIdx: 0, // Default to GET
 		url:       u,
 		body:      t,
 		view:      vp,
 		pane:      paneSidebar,
 		activeTab: tabOverview,
-		status:    "tab: panes  •  j/k: move  •  i: edit  •  esc: exit  •  enter: run  •  q: quit",
+		status:    "tab: panes  •  j/k: move  •  i: edit  •  enter: run  •  q: quit",
 	}
 }
 
@@ -106,37 +132,73 @@ func (m *model) prevPane() {
 }
 
 func (m *model) nextEditorPart() {
-	m.editorPart = (m.editorPart + 1) % 3
+	switch m.activeTab {
+	case tabOverview:
+		// Overview has Method and URL (cycle between 0 and 1)
+		if m.editorPart == edMethod {
+			m.editorPart = edURL
+		} else {
+			m.editorPart = edMethod
+		}
+	case tabHeaders:
+		// Headers tab has no editable fields yet
+	case tabBody:
+		// Body tab has only one field, no navigation needed
+		m.editorPart = edBody
+	}
 	m.applyFocus()
 }
 
 func (m *model) prevEditorPart() {
-	m.editorPart = (m.editorPart + 2) % 3
+	switch m.activeTab {
+	case tabOverview:
+		// Overview has Method and URL (cycle between 0 and 1)
+		if m.editorPart == edURL {
+			m.editorPart = edMethod
+		} else {
+			m.editorPart = edURL
+		}
+	case tabHeaders:
+		// Headers tab has no editable fields yet
+	case tabBody:
+		// Body tab has only one field, no navigation needed
+		m.editorPart = edBody
+	}
 	m.applyFocus()
 }
 
 func (m *model) nextTab() {
 	m.activeTab = (m.activeTab + 1) % 3
+	m.resetEditorPartForTab()
 }
 
 func (m *model) prevTab() {
 	m.activeTab = (m.activeTab + 2) % 3
+	m.resetEditorPartForTab()
 }
 
-func (m *model) setTab(tab requestTab) {
-	m.activeTab = tab
+// resetEditorPartForTab sets the editorPart to the first field of the current tab
+func (m *model) resetEditorPartForTab() {
+	switch m.activeTab {
+	case tabOverview:
+		m.editorPart = edMethod
+	case tabHeaders:
+		// No editable fields yet
+	case tabBody:
+		m.editorPart = edBody
+	}
 }
 
 func (m *model) applyFocus() {
-	m.method.Blur()
 	m.url.Blur()
 	m.body.Blur()
 
 	// Only focus text inputs when in insert mode
+	// Method is a dropdown, not a text input, so it doesn't need focus
 	if m.pane == paneEditor && m.insertMode {
 		switch m.editorPart {
 		case edMethod:
-			m.method.Focus()
+			// Method is a dropdown - no focus needed
 		case edURL:
 			m.url.Focus()
 		case edBody:

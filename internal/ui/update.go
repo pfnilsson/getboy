@@ -27,7 +27,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var cmd tea.Cmd
 			switch m.editorPart {
 			case edMethod:
-				m.method, cmd = m.method.Update(msg)
+				// Method is a dropdown - handle j/k for cycling
+				switch msg.String() {
+				case "k", "up":
+					m.prevMethod()
+				case "j", "down":
+					m.nextMethod()
+				}
+				return m, nil
 			case edURL:
 				m.url, cmd = m.url.Update(msg)
 			case edBody:
@@ -63,17 +70,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if m.pane == paneSidebar {
 				if it, ok := m.sidebar.SelectedItem().(reqItem); ok {
-					m.method.SetValue(it.method)
+					m.setMethod(it.method)
 					m.url.SetValue(it.url)
 					m.body.SetValue(it.body)
 					m.status = fmt.Sprintf("Loaded '%s'", it.title)
 				}
 				return m, nil
 			}
-			method := strings.ToUpper(strings.TrimSpace(m.method.Value()))
-			if method == "" {
-				method = "GET"
-			}
+			method := m.methodValue()
 			url := m.ensureURL(m.url.Value())
 			if strings.TrimSpace(url) == "" {
 				m.status = "Enter a URL first"

@@ -86,15 +86,14 @@ func TestPaneNavigation(t *testing.T) {
 	}
 }
 
-// TestEditorNavigation tests that editor part focus cycles correctly
+// TestEditorNavigation tests that editor part focus cycles correctly within tabs
 func TestEditorNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
 
-	// Start at method
-	if m.editorPart != edMethod {
-		t.Errorf("initial editorPart = %v, want %v", m.editorPart, edMethod)
-	}
+	// Overview tab: should cycle between method and URL
+	m.activeTab = tabOverview
+	m.editorPart = edMethod
 
 	// Next should go to URL
 	m.nextEditorPart()
@@ -102,16 +101,18 @@ func TestEditorNavigation(t *testing.T) {
 		t.Errorf("after nextEditorPart() = %v, want %v", m.editorPart, edURL)
 	}
 
-	// Next should go to body
-	m.nextEditorPart()
-	if m.editorPart != edBody {
-		t.Errorf("after nextEditorPart() = %v, want %v", m.editorPart, edBody)
-	}
-
-	// Next should cycle back to method
+	// Next should cycle back to method (only 2 fields in overview)
 	m.nextEditorPart()
 	if m.editorPart != edMethod {
 		t.Errorf("after nextEditorPart() = %v, want %v", m.editorPart, edMethod)
+	}
+
+	// Body tab: should stay on body (only 1 field)
+	m.activeTab = tabBody
+	m.editorPart = edBody
+	m.nextEditorPart()
+	if m.editorPart != edBody {
+		t.Errorf("in body tab, editorPart = %v, want %v", m.editorPart, edBody)
 	}
 }
 
@@ -154,6 +155,7 @@ func TestLayoutCalculations(t *testing.T) {
 func TestEditorJKNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
+	m.activeTab = tabOverview
 	m.insertMode = false
 
 	// Start at method
@@ -168,14 +170,14 @@ func TestEditorJKNavigation(t *testing.T) {
 		t.Errorf("after 'j' editorPart = %v, want %v", m.editorPart, edURL)
 	}
 
-	// Press 'j' again should go to body
+	// Press 'j' again should cycle back to method (only 2 fields in overview tab)
 	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 	m = updated.(model)
-	if m.editorPart != edBody {
-		t.Errorf("after 'j' editorPart = %v, want %v", m.editorPart, edBody)
+	if m.editorPart != edMethod {
+		t.Errorf("after 'j' editorPart = %v, want %v", m.editorPart, edMethod)
 	}
 
-	// Press 'k' should go back to URL
+	// Press 'k' should go to URL
 	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
 	m = updated.(model)
 	if m.editorPart != edURL {
@@ -377,9 +379,7 @@ func TestApplyFocusInInsertMode(t *testing.T) {
 	m.insertMode = false
 	m.applyFocus()
 
-	if m.method.Focused() {
-		t.Error("method should not be focused when not in insert mode")
-	}
+	// Method is now a dropdown, not a text input - no focus check needed
 	if m.url.Focused() {
 		t.Error("url should not be focused when not in insert mode")
 	}
@@ -391,9 +391,7 @@ func TestApplyFocusInInsertMode(t *testing.T) {
 	m.insertMode = true
 	m.applyFocus()
 
-	if m.method.Focused() {
-		t.Error("method should not be focused when editorPart is edURL")
-	}
+	// Method is a dropdown, URL should be focused since editorPart is edURL
 	if !m.url.Focused() {
 		t.Error("url should be focused when editorPart is edURL and in insert mode")
 	}
@@ -449,8 +447,8 @@ func TestEnterKeyLoadsItemFromSidebar(t *testing.T) {
 	m = updated.(model)
 
 	// Should have loaded the first example item
-	if m.method.Value() != "GET" {
-		t.Errorf("method = %q, want %q", m.method.Value(), "GET")
+	if m.methodValue() != "GET" {
+		t.Errorf("method = %q, want %q", m.methodValue(), "GET")
 	}
 	if m.url.Value() != "https://httpbin.org/get" {
 		t.Errorf("url = %q, want %q", m.url.Value(), "https://httpbin.org/get")
@@ -555,7 +553,7 @@ func TestShiftTabNavigation(t *testing.T) {
 func TestDefaultMethodIsGET(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
-	m.method.SetValue("") // Empty method
+	// methodIdx defaults to 0 (GET)
 	m.url.SetValue("https://example.com")
 
 	updated, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -573,36 +571,77 @@ func TestDefaultMethodIsGET(t *testing.T) {
 	}
 }
 
-// TestMethodUppercase tests that method is converted to uppercase
-func TestMethodUppercase(t *testing.T) {
+// TestMethodDropdownCycling tests that method dropdown cycles through options
+func TestMethodDropdownCycling(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
-	m.method.SetValue("post") // Lowercase
+	m.setMethod("POST") // Start at POST
 	m.url.SetValue("https://example.com")
 
 	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	m = updated.(model)
 
-	// Status should show POST in uppercase
+	// Status should show POST
 	if !strings.Contains(m.status, "POST") {
 		t.Errorf("status = %q, should contain 'POST'", m.status)
 	}
 }
 
-// TestInsertModeWithMethodInput tests insert mode with method input
-func TestInsertModeWithMethodInput(t *testing.T) {
+// TestSetMethod tests setting method by name
+func TestSetMethod(t *testing.T) {
+	m := New().(model)
+
+	// Set to POST
+	m.setMethod("POST")
+	if m.methodValue() != "POST" {
+		t.Errorf("after setMethod(POST), methodValue() = %q, want POST", m.methodValue())
+	}
+
+	// Set to lowercase should work
+	m.setMethod("delete")
+	if m.methodValue() != "DELETE" {
+		t.Errorf("after setMethod(delete), methodValue() = %q, want DELETE", m.methodValue())
+	}
+
+	// Set to unknown method should default to GET
+	m.setMethod("UNKNOWN")
+	if m.methodValue() != "GET" {
+		t.Errorf("after setMethod(UNKNOWN), methodValue() = %q, want GET", m.methodValue())
+	}
+}
+
+// TestMethodDropdownNavigation tests j/k navigation in method dropdown
+func TestMethodDropdownNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
+	m.activeTab = tabOverview
 	m.editorPart = edMethod
 	m.insertMode = true
-	m.applyFocus()
 
-	// Type 'P' - should go to method input
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'P'}})
+	// Start at GET (index 0)
+	if m.methodValue() != "GET" {
+		t.Fatalf("initial method = %q, want GET", m.methodValue())
+	}
+
+	// Press 'j' (down) should go to POST
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 	m = updated.(model)
+	if m.methodValue() != "POST" {
+		t.Errorf("after 'j' method = %q, want POST", m.methodValue())
+	}
 
-	if m.method.Value() != "P" {
-		t.Errorf("method.Value() = %q, want %q", m.method.Value(), "P")
+	// Press 'k' (up) should go back to GET
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+	m = updated.(model)
+	if m.methodValue() != "GET" {
+		t.Errorf("after 'k' method = %q, want GET", m.methodValue())
+	}
+
+	// Press 'k' again should wrap to OPTIONS (last item)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+	m = updated.(model)
+	if m.methodValue() != "OPTIONS" {
+		t.Errorf("after 'k' (wrap) method = %q, want OPTIONS", m.methodValue())
 	}
 }
 
@@ -623,28 +662,31 @@ func TestInsertModeWithBodyInput(t *testing.T) {
 	}
 }
 
-// TestPrevEditorPart tests cycling backwards through editor parts
+// TestPrevEditorPart tests cycling backwards through editor parts within tabs
 func TestPrevEditorPart(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
+	m.activeTab = tabOverview
 	m.editorPart = edMethod
 
-	// Should wrap to body
-	m.prevEditorPart()
-	if m.editorPart != edBody {
-		t.Errorf("editorPart = %v, want %v", m.editorPart, edBody)
-	}
-
-	// Should go to URL
+	// In overview tab, should wrap to URL (only 2 fields)
 	m.prevEditorPart()
 	if m.editorPart != edURL {
 		t.Errorf("editorPart = %v, want %v", m.editorPart, edURL)
 	}
 
-	// Should go to method
+	// Should go back to method
 	m.prevEditorPart()
 	if m.editorPart != edMethod {
 		t.Errorf("editorPart = %v, want %v", m.editorPart, edMethod)
+	}
+
+	// In body tab, should stay on body (only 1 field)
+	m.activeTab = tabBody
+	m.editorPart = edBody
+	m.prevEditorPart()
+	if m.editorPart != edBody {
+		t.Errorf("in body tab, editorPart = %v, want %v", m.editorPart, edBody)
 	}
 }
 
@@ -682,17 +724,44 @@ func TestTabCycling(t *testing.T) {
 	}
 }
 
+// TestTabSwitchResetsEditorPart tests that switching tabs resets editorPart appropriately
+func TestTabSwitchResetsEditorPart(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabOverview
+	m.editorPart = edURL // Start at URL
+
+	// Switch to body tab - should set editorPart to edBody
+	m.nextTab() // headers
+	m.nextTab() // body
+	if m.activeTab != tabBody {
+		t.Fatalf("activeTab = %v, want %v", m.activeTab, tabBody)
+	}
+	if m.editorPart != edBody {
+		t.Errorf("after switching to body tab, editorPart = %v, want %v", m.editorPart, edBody)
+	}
+
+	// Switch back to overview tab - should set editorPart to edMethod
+	m.nextTab() // overview
+	if m.activeTab != tabOverview {
+		t.Fatalf("activeTab = %v, want %v", m.activeTab, tabOverview)
+	}
+	if m.editorPart != edMethod {
+		t.Errorf("after switching to overview tab, editorPart = %v, want %v", m.editorPart, edMethod)
+	}
+}
+
 // TestApplyFocusAllEditorParts tests applyFocus for all editor parts
 func TestApplyFocusAllEditorParts(t *testing.T) {
+	// Method is now a dropdown (not focusable), URL and Body are text inputs
 	tests := []struct {
 		part     editorFocus
 		wantURL  bool
-		wantMeth bool
 		wantBody bool
 	}{
-		{edMethod, false, true, false},
-		{edURL, true, false, false},
-		{edBody, false, false, true},
+		{edMethod, false, false}, // Method is a dropdown, no focus
+		{edURL, true, false},
+		{edBody, false, true},
 	}
 
 	for _, tt := range tests {
@@ -703,9 +772,6 @@ func TestApplyFocusAllEditorParts(t *testing.T) {
 			m.insertMode = true
 			m.applyFocus()
 
-			if m.method.Focused() != tt.wantMeth {
-				t.Errorf("method.Focused() = %v, want %v", m.method.Focused(), tt.wantMeth)
-			}
 			if m.url.Focused() != tt.wantURL {
 				t.Errorf("url.Focused() = %v, want %v", m.url.Focused(), tt.wantURL)
 			}
