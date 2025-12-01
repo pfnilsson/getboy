@@ -26,7 +26,7 @@ func TestViewContainsPanes(t *testing.T) {
 	}
 
 	// Check that status bar is present
-	if !strings.Contains(view, "tab: switch panes") {
+	if !strings.Contains(view, "tab: panes") {
 		t.Error("view does not contain status message")
 	}
 }
@@ -128,7 +128,7 @@ func TestViewError(t *testing.T) {
 	m := New().(model)
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = updated.(model)
-	m.err = &testError{msg: "test error"}
+	m.err = &viewTestError{msg: "test error"}
 
 	view := m.View()
 
@@ -137,11 +137,92 @@ func TestViewError(t *testing.T) {
 	}
 }
 
-// testError is a simple error implementation for testing
-type testError struct {
+// viewTestError is a simple error implementation for testing
+type viewTestError struct {
 	msg string
 }
 
-func (e *testError) Error() string {
+func (e *viewTestError) Error() string {
 	return e.msg
+}
+
+// TestViewInsertModeIndicator tests that insert mode shows in status bar
+func TestViewInsertModeIndicator(t *testing.T) {
+	m := New().(model)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(model)
+	m.insertMode = true
+
+	view := m.View()
+
+	if !strings.Contains(view, "-- INSERT --") {
+		t.Error("view does not show INSERT mode indicator when insertMode is true")
+	}
+}
+
+// TestViewEditorSelectionIndicator tests that selection indicator shows in editor
+func TestViewEditorSelectionIndicator(t *testing.T) {
+	m := New().(model)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(model)
+	m.pane = paneEditor
+	m.insertMode = false
+	m.editorPart = edMethod
+
+	editorView := m.viewOverviewTab()
+
+	// Should contain selection indicator for method
+	if !strings.Contains(editorView, "> Method:") {
+		t.Error("editor view does not show selection indicator for method")
+	}
+
+	// Change selection to URL
+	m.editorPart = edURL
+	editorView = m.viewOverviewTab()
+
+	if !strings.Contains(editorView, "> URL:") {
+		t.Error("editor view does not show selection indicator for URL")
+	}
+
+	// Change selection to body
+	m.editorPart = edBody
+	editorView = m.viewOverviewTab()
+
+	if !strings.Contains(editorView, "> Body") {
+		t.Error("editor view does not show selection indicator for body")
+	}
+}
+
+// TestViewNoSelectionIndicatorInInsertMode tests that selection indicator is hidden in insert mode
+func TestViewNoSelectionIndicatorInInsertMode(t *testing.T) {
+	m := New().(model)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(model)
+	m.pane = paneEditor
+	m.insertMode = true
+	m.editorPart = edMethod
+
+	editorView := m.viewOverviewTab()
+
+	// Should not contain selection indicator when in insert mode
+	if strings.Contains(editorView, "> Method:") {
+		t.Error("editor view should not show selection indicator in insert mode")
+	}
+}
+
+// TestViewNoSelectionIndicatorInOtherPanes tests that selection indicator is hidden in other panes
+func TestViewNoSelectionIndicatorInOtherPanes(t *testing.T) {
+	m := New().(model)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(model)
+	m.pane = paneSidebar
+	m.insertMode = false
+	m.editorPart = edMethod
+
+	editorView := m.viewOverviewTab()
+
+	// Should not contain selection indicator when not in editor pane
+	if strings.Contains(editorView, "> Method:") {
+		t.Error("editor view should not show selection indicator when not in editor pane")
+	}
 }

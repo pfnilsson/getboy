@@ -14,6 +14,9 @@ func (m model) View() string {
 
 	// ===== Footer / Status ====================================================
 	status := m.status
+	if m.insertMode {
+		status = "-- INSERT --  esc: exit insert mode"
+	}
 	if m.loading {
 		status += "  ·  loading…"
 	}

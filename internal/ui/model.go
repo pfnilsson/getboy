@@ -25,6 +25,7 @@ type model struct {
 	pane       focusPane
 	editorPart editorFocus
 	activeTab  requestTab
+	insertMode bool
 
 	status  string
 	loading bool
@@ -70,6 +71,11 @@ func New() tea.Model {
 	t.Placeholder = "Request body (optional)"
 	t.ShowLineNumbers = false
 
+	// Ensure all inputs start blurred (not in insert mode)
+	mth.Blur()
+	u.Blur()
+	t.Blur()
+
 	vp := viewport.New(0, 0)
 	vp.SetContent("Response will appear here…")
 
@@ -81,7 +87,7 @@ func New() tea.Model {
 		view:      vp,
 		pane:      paneSidebar,
 		activeTab: tabOverview,
-		status:    "tab: switch panes  •  [/]: tabs  •  enter: run  •  j/k: move  •  q: quit",
+		status:    "tab: panes  •  j/k: move  •  i: edit  •  esc: exit  •  enter: run  •  q: quit",
 	}
 }
 
@@ -89,11 +95,13 @@ func (m model) Init() tea.Cmd { return nil }
 
 func (m *model) nextPane() {
 	m.pane = (m.pane + 1) % 3
+	m.insertMode = false
 	m.applyFocus()
 }
 
 func (m *model) prevPane() {
 	m.pane = (m.pane + 2) % 3
+	m.insertMode = false
 	m.applyFocus()
 }
 
@@ -124,9 +132,8 @@ func (m *model) applyFocus() {
 	m.url.Blur()
 	m.body.Blur()
 
-	switch m.pane {
-	case paneSidebar:
-	case paneEditor:
+	// Only focus text inputs when in insert mode
+	if m.pane == paneEditor && m.insertMode {
 		switch m.editorPart {
 		case edMethod:
 			m.method.Focus()
@@ -135,7 +142,6 @@ func (m *model) applyFocus() {
 		case edBody:
 			m.body.Focus()
 		}
-	case paneResponse:
 	}
 }
 
