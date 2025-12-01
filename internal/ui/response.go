@@ -7,6 +7,7 @@ func (m model) viewResponse() string {
 	respBox := titledPane(
 		content,
 		m.rightPaneWidth(),
+		m.responseHeight(),
 		m.pane == paneResponse,
 		paneBadge(3),
 		"Response",

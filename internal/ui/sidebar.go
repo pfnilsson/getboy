@@ -7,6 +7,7 @@ func (m model) viewSidebar() string {
 	sbBox := titledPane(
 		content,
 		m.sidebarWidth(),
+		m.contentHeight(),
 		m.pane == paneSidebar,
 		paneBadge(1),
 		"Requests",

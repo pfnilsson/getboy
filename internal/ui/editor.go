@@ -24,6 +24,7 @@ func (m model) viewEditor() string {
 	edBox := titledPaneWithTabs(
 		content,
 		m.rightPaneWidth(),
+		m.editorHeight(),
 		m.pane == paneEditor,
 		paneBadge(2),
 		"Request",

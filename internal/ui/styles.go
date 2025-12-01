@@ -54,12 +54,17 @@ func paneBadge(n int) string {
 	return fmt.Sprintf("[%d]", n)
 }
 
-func titledPane(content string, width int, focused bool, leftBadge string, leftTitle string) string {
-	return titledPaneWithTabs(content, width, focused, leftBadge, leftTitle, nil, -1)
+func titledPane(content string, width, height int, focused bool, leftBadge string, leftTitle string) string {
+	return titledPaneWithTabs(content, width, height, focused, leftBadge, leftTitle, nil, -1)
 }
 
-func titledPaneWithTabs(content string, width int, focused bool, leftBadge string, leftTitle string, tabs []string, activeTab int) string {
+func titledPaneWithTabs(content string, width, height int, focused bool, leftBadge string, leftTitle string, tabs []string, activeTab int) string {
 	st := paneStyle(focused).Width(width)
+	if height > 0 {
+		// Height includes the top border line (1) + content area
+		// Border adds 2 for top/bottom, but we synthesize top, so subtract 1 for bottom only
+		st = st.Height(height - 2) // -2 for top line we add + bottom border
+	}
 
 	// Body without top border — we synthesize that ourselves.
 	body := st.BorderTop(false).Render(content)

@@ -326,6 +326,38 @@ func TestEditorContentFitsInPane(t *testing.T) {
 	}
 }
 
+// TestPaneHeightAlignment tests that sidebar height equals editor + response heights
+func TestPaneHeightAlignment(t *testing.T) {
+	tests := []struct {
+		name   string
+		width  int
+		height int
+	}{
+		{"standard", 120, 40},
+		{"tall", 100, 80},
+		{"short", 120, 20},
+		{"minimum", 66, 20},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := New().(model)
+			updated, _ := m.Update(tea.WindowSizeMsg{Width: tt.width, Height: tt.height})
+			m = updated.(model)
+
+			sidebarHeight := m.contentHeight()
+			editorHeight := m.editorHeight()
+			responseHeight := m.responseHeight()
+
+			// Sidebar should equal editor + response
+			if editorHeight+responseHeight != sidebarHeight {
+				t.Errorf("height mismatch: editor (%d) + response (%d) = %d, but sidebar = %d",
+					editorHeight, responseHeight, editorHeight+responseHeight, sidebarHeight)
+			}
+		})
+	}
+}
+
 // TestLayoutRightPaneScales tests that right pane scales with window width
 func TestLayoutRightPaneScales(t *testing.T) {
 	// Test that right pane gets wider as window gets wider
