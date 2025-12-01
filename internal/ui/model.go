@@ -113,7 +113,7 @@ func New() tea.Model {
 		view:      vp,
 		pane:      paneSidebar,
 		activeTab: tabOverview,
-		status:    "tab: panes  •  j/k: move  •  i: edit  •  enter: run  •  q: quit",
+		status:    "1/2/3: panes  j/k: select  enter: load",
 	}
 }
 

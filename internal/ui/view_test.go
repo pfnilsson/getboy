@@ -25,8 +25,8 @@ func TestViewContainsPanes(t *testing.T) {
 		}
 	}
 
-	// Check that status bar is present
-	if !strings.Contains(view, "tab: panes") {
+	// Check that status bar is present (sidebar is default pane)
+	if !strings.Contains(view, "1/2/3: panes") {
 		t.Error("view does not contain status message")
 	}
 }
@@ -210,6 +210,55 @@ func TestViewNoSelectionIndicatorInInsertMode(t *testing.T) {
 	// Should not contain selection indicator when in insert mode
 	if strings.Contains(editorView, "> Method:") {
 		t.Error("editor view should not show selection indicator in insert mode")
+	}
+}
+
+// TestViewContextualStatusBar tests that status bar shows contextual hints per pane
+func TestViewContextualStatusBar(t *testing.T) {
+	m := New().(model)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(model)
+
+	// Test sidebar pane status
+	m.pane = paneSidebar
+	m.insertMode = false
+	view := m.View()
+	if !strings.Contains(view, "j/k: select") {
+		t.Error("sidebar pane should show 'j/k: select' hint")
+	}
+	if !strings.Contains(view, "enter: load") {
+		t.Error("sidebar pane should show 'enter: load' hint")
+	}
+
+	// Test editor pane status
+	m.pane = paneEditor
+	view = m.View()
+	if !strings.Contains(view, "tab: tabs") {
+		t.Error("editor pane should show 'tab: tabs' hint")
+	}
+	if !strings.Contains(view, "i: insert") {
+		t.Error("editor pane should show 'i: insert' hint")
+	}
+	if !strings.Contains(view, "j/k: fields") {
+		t.Error("editor pane should show 'j/k: fields' hint")
+	}
+
+	// Test response pane status
+	m.pane = paneResponse
+	view = m.View()
+	if !strings.Contains(view, "j/k: scroll") {
+		t.Error("response pane should show 'j/k: scroll' hint")
+	}
+
+	// Test insert mode overrides contextual hints
+	m.pane = paneEditor
+	m.insertMode = true
+	view = m.View()
+	if !strings.Contains(view, "-- INSERT --") {
+		t.Error("insert mode should show INSERT indicator")
+	}
+	if !strings.Contains(view, "esc: exit") {
+		t.Error("insert mode should show 'esc: exit' hint")
 	}
 }
 

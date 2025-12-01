@@ -317,7 +317,7 @@ func TestEditorArrowNavigation(t *testing.T) {
 	}
 }
 
-// TestEditorTabNavigation tests that [ and ] navigate tabs
+// TestEditorTabNavigation tests that tab/shift-tab navigate tabs within editor
 func TestEditorTabNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
@@ -328,18 +328,18 @@ func TestEditorTabNavigation(t *testing.T) {
 		t.Fatalf("initial activeTab = %v, want %v", m.activeTab, tabOverview)
 	}
 
-	// Press ']' should go to headers
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{']'}})
+	// Press 'tab' should go to headers
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
 	m = updated.(model)
 	if m.activeTab != tabHeaders {
-		t.Errorf("after ']' activeTab = %v, want %v", m.activeTab, tabHeaders)
+		t.Errorf("after 'tab' activeTab = %v, want %v", m.activeTab, tabHeaders)
 	}
 
-	// Press '[' should go back to overview
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'['}})
+	// Press 'shift+tab' should go back to overview
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
 	m = updated.(model)
 	if m.activeTab != tabOverview {
-		t.Errorf("after '[' activeTab = %v, want %v", m.activeTab, tabOverview)
+		t.Errorf("after 'shift+tab' activeTab = %v, want %v", m.activeTab, tabOverview)
 	}
 }
 
@@ -533,19 +533,33 @@ func TestQuitKeys(t *testing.T) {
 	}
 }
 
-// TestShiftTabNavigation tests that shift+tab navigates backwards through panes
-func TestShiftTabNavigation(t *testing.T) {
+// TestNumberKeyPaneNavigation tests that 1/2/3 keys navigate to specific panes
+func TestNumberKeyPaneNavigation(t *testing.T) {
 	m := New().(model)
 	// Start at sidebar (pane 0)
 	if m.pane != paneSidebar {
 		t.Fatalf("initial pane = %v, want %v", m.pane, paneSidebar)
 	}
 
-	// Shift+tab should go to response (pane 2, wrapping backwards)
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+	// Press '2' should go to editor pane
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'2'}})
+	m = updated.(model)
+	if m.pane != paneEditor {
+		t.Errorf("after '2' pane = %v, want %v", m.pane, paneEditor)
+	}
+
+	// Press '3' should go to response pane
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'3'}})
 	m = updated.(model)
 	if m.pane != paneResponse {
-		t.Errorf("after shift+tab pane = %v, want %v", m.pane, paneResponse)
+		t.Errorf("after '3' pane = %v, want %v", m.pane, paneResponse)
+	}
+
+	// Press '1' should go back to sidebar
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})
+	m = updated.(model)
+	if m.pane != paneSidebar {
+		t.Errorf("after '1' pane = %v, want %v", m.pane, paneSidebar)
 	}
 }
 

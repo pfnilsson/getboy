@@ -13,9 +13,18 @@ func (m model) View() string {
 	right := lipgloss.JoinVertical(lipgloss.Left, edBox, respBox)
 
 	// ===== Footer / Status ====================================================
-	status := m.status
+	var status string
 	if m.insertMode {
-		status = "-- INSERT --  esc: exit insert mode"
+		status = "-- INSERT --  esc: exit"
+	} else {
+		switch m.pane {
+		case paneSidebar:
+			status = "1/2/3: panes  j/k: select  enter: load"
+		case paneEditor:
+			status = "1/2/3: panes  tab: tabs  i: insert  j/k: fields"
+		case paneResponse:
+			status = "1/2/3: panes  j/k: scroll"
+		}
 	}
 	if m.loading {
 		status += "  ·  loading…"

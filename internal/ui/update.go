@@ -46,12 +46,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
-		case "tab":
-			m.nextPane()
-			return m, nil
-		case "shift+tab":
-			m.prevPane()
-			return m, nil
 		case "1":
 			m.pane = paneSidebar
 			m.insertMode = false
@@ -106,10 +100,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "down", "j":
 				m.nextEditorPart()
 				return m, nil
-			case "[", "left":
+			case "shift+tab", "left":
 				m.prevTab()
 				return m, nil
-			case "]", "right":
+			case "tab", "right":
 				m.nextTab()
 				return m, nil
 			}
