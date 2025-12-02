@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -36,6 +37,27 @@ func newHeaderRow() headerRow {
 	return headerRow{key: k, value: v}
 }
 
+// paramRow represents a single query parameter key-value pair
+type paramRow struct {
+	key   textinput.Model
+	value textinput.Model
+}
+
+// newParamRow creates a new empty param row
+func newParamRow() paramRow {
+	k := textinput.New()
+	k.Placeholder = "param"
+	k.CharLimit = 256
+	k.Prompt = ""
+
+	v := textinput.New()
+	v.Placeholder = "value"
+	v.CharLimit = 4096
+	v.Prompt = ""
+
+	return paramRow{key: k, value: v}
+}
+
 type model struct {
 	width  int
 	height int
@@ -44,6 +66,7 @@ type model struct {
 
 	methodIdx      int // index into httpMethods
 	url            textinput.Model
+	params         []paramRow
 	headers        []headerRow
 	headersRawText textarea.Model // textarea for raw headers mode
 	body           textarea.Model
@@ -53,6 +76,8 @@ type model struct {
 	editorPart  editorFocus
 	activeTab   requestTab
 	insertMode  bool
+	paramIdx    int         // which param row is selected
+	paramField  headerField // key or value within the param row (reuse headerField type)
 	headerIdx   int         // which header row is selected
 	headerField headerField // key or value within the row
 	headersRaw  bool        // toggle for raw view mode
@@ -149,10 +174,14 @@ func New() tea.Model {
 	// Start with one empty header row
 	headers := []headerRow{newHeaderRow()}
 
+	// Start with one empty param row
+	params := []paramRow{newParamRow()}
+
 	return model{
 		sidebar:        sb,
 		methodIdx:      0, // Default to GET
 		url:            u,
+		params:         params,
 		headers:        headers,
 		headersRawText: rawHeaders,
 		body:           t,
@@ -184,6 +213,30 @@ func (m *model) deleteHeaderRow() {
 	m.headers = append(m.headers[:m.headerIdx], m.headers[m.headerIdx+1:]...)
 	if m.headerIdx >= len(m.headers) {
 		m.headerIdx = len(m.headers) - 1
+	}
+}
+
+// addParamRow adds a new param row after the current one
+func (m *model) addParamRow() {
+	newRow := newParamRow()
+	// Insert after current row
+	idx := m.paramIdx + 1
+	m.params = append(m.params[:idx], append([]paramRow{newRow}, m.params[idx:]...)...)
+	m.paramIdx = idx
+	m.paramField = headerKey
+}
+
+// deleteParamRow removes the current param row if there's more than one
+func (m *model) deleteParamRow() {
+	if len(m.params) <= 1 {
+		// Can't delete the last row, just clear it
+		m.params[0].key.SetValue("")
+		m.params[0].value.SetValue("")
+		return
+	}
+	m.params = append(m.params[:m.paramIdx], m.params[m.paramIdx+1:]...)
+	if m.paramIdx >= len(m.params) {
+		m.paramIdx = len(m.params) - 1
 	}
 }
 
@@ -246,6 +299,12 @@ func (m *model) nextEditorPart() {
 		} else {
 			m.editorPart = edMethod
 		}
+	case tabParams:
+		m.editorPart = edParams
+		// Move to next param row
+		if m.paramIdx < len(m.params)-1 {
+			m.paramIdx++
+		}
 	case tabHeaders:
 		m.editorPart = edHeaders
 		// Move to next header row
@@ -268,6 +327,12 @@ func (m *model) prevEditorPart() {
 		} else {
 			m.editorPart = edURL
 		}
+	case tabParams:
+		m.editorPart = edParams
+		// Move to previous param row
+		if m.paramIdx > 0 {
+			m.paramIdx--
+		}
 	case tabHeaders:
 		m.editorPart = edHeaders
 		// Move to previous header row
@@ -282,12 +347,12 @@ func (m *model) prevEditorPart() {
 }
 
 func (m *model) nextTab() {
-	m.activeTab = (m.activeTab + 1) % 3
+	m.activeTab = (m.activeTab + 1) % 4
 	m.resetEditorPartForTab()
 }
 
 func (m *model) prevTab() {
-	m.activeTab = (m.activeTab + 2) % 3
+	m.activeTab = (m.activeTab + 3) % 4
 	m.resetEditorPartForTab()
 }
 
@@ -296,6 +361,11 @@ func (m *model) resetEditorPartForTab() {
 	switch m.activeTab {
 	case tabOverview:
 		m.editorPart = edMethod
+	case tabParams:
+		m.editorPart = edParams
+		m.syncParamsFromURL() // Sync params from URL when entering tab
+		m.paramIdx = 0
+		m.paramField = headerKey
 	case tabHeaders:
 		m.editorPart = edHeaders
 		m.headerIdx = 0
@@ -309,6 +379,11 @@ func (m *model) applyFocus() {
 	m.url.Blur()
 	m.body.Blur()
 	m.headersRawText.Blur()
+	// Blur all param inputs
+	for i := range m.params {
+		m.params[i].key.Blur()
+		m.params[i].value.Blur()
+	}
 	// Blur all header inputs
 	for i := range m.headers {
 		m.headers[i].key.Blur()
@@ -323,6 +398,14 @@ func (m *model) applyFocus() {
 			// Method is a dropdown - no focus needed
 		case edURL:
 			m.url.Focus()
+		case edParams:
+			if m.paramIdx >= 0 && m.paramIdx < len(m.params) {
+				if m.paramField == headerKey {
+					m.params[m.paramIdx].key.Focus()
+				} else {
+					m.params[m.paramIdx].value.Focus()
+				}
+			}
 		case edHeaders:
 			if m.headersRaw {
 				// In raw mode, focus the textarea
@@ -349,6 +432,67 @@ func (m model) ensureURL(u string) string {
 		return "https://" + u
 	}
 	return u
+}
+
+// syncParamsFromURL parses the URL query string and updates params
+func (m *model) syncParamsFromURL() {
+	urlStr := m.url.Value()
+	if urlStr == "" {
+		return
+	}
+
+	// Parse URL to extract query params
+	parsed, err := url.Parse(urlStr)
+	if err != nil {
+		return
+	}
+
+	query := parsed.Query()
+	if len(query) == 0 {
+		// No query params, reset to single empty row
+		m.params = []paramRow{newParamRow()}
+		m.paramIdx = 0
+		return
+	}
+
+	// Build params from query
+	m.params = nil
+	for key, values := range query {
+		for _, val := range values {
+			row := newParamRow()
+			row.key.SetValue(key)
+			row.value.SetValue(val)
+			m.params = append(m.params, row)
+		}
+	}
+	if len(m.params) == 0 {
+		m.params = []paramRow{newParamRow()}
+	}
+	m.paramIdx = 0
+}
+
+// syncURLFromParams updates the URL query string from params
+func (m *model) syncURLFromParams() {
+	urlStr := m.url.Value()
+
+	// Parse existing URL or create minimal one
+	parsed, err := url.Parse(urlStr)
+	if err != nil {
+		return
+	}
+
+	// Build query string from params
+	query := url.Values{}
+	for _, p := range m.params {
+		key := strings.TrimSpace(p.key.Value())
+		if key != "" {
+			query.Add(key, p.value.Value())
+		}
+	}
+
+	// Update URL with new query string
+	parsed.RawQuery = query.Encode()
+	m.url.SetValue(parsed.String())
 }
 
 // getHeaders returns headers as a map, skipping empty keys

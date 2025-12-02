@@ -13,6 +13,7 @@ type editorFocus int
 const (
 	edMethod editorFocus = iota
 	edURL
+	edParams
 	edHeaders
 	edBody
 )
@@ -29,6 +30,7 @@ type requestTab int
 
 const (
 	tabOverview requestTab = iota
+	tabParams
 	tabHeaders
 	tabBody
 )

@@ -12,6 +12,8 @@ func (m model) viewEditor() string {
 	switch m.activeTab {
 	case tabOverview:
 		content = m.viewOverviewTab()
+	case tabParams:
+		content = m.viewParamsTab()
 	case tabHeaders:
 		content = m.viewHeadersTab()
 	case tabBody:
@@ -19,7 +21,7 @@ func (m model) viewEditor() string {
 	}
 
 	// Define tabs
-	tabs := []string{"Overview", "Headers", "Body"}
+	tabs := []string{"Overview", "Params", "Headers", "Body"}
 
 	edBox := titledPaneWithTabs(
 		content,
@@ -80,6 +82,107 @@ func (m model) viewOverviewTab() string {
 	urlLine := urlLabel + m.url.View()
 
 	return lipgloss.JoinVertical(lipgloss.Left, methodLine, urlLine)
+}
+
+// viewParamsTab renders the params tab with key-value pairs (like headers but no raw mode)
+func (m model) viewParamsTab() string {
+	faintStyle := lipgloss.NewStyle().Faint(true)
+
+	var lines []string
+
+	// Style for input boxes - rounded border
+	inputBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(theme.Current.BorderInactive).
+		Padding(0, 1)
+
+	activeInputBoxStyle := inputBoxStyle.
+		BorderForeground(theme.Current.ListSelectedText)
+
+	// Key-value mode with scrolling
+	rowHeight := 3
+	// Available height: editor height - pane borders (2) - scroll indicators (2) - padding (1)
+	availableHeight := m.editorHeight() - 5
+	totalParams := len(m.params)
+
+	visibleRows := max(availableHeight/rowHeight, 1)
+
+	// Calculate scroll window to keep selected row visible
+	startIdx := 0
+	if totalParams > visibleRows {
+		startIdx = min(max(m.paramIdx-visibleRows/2, 0), totalParams-visibleRows)
+	}
+	endIdx := min(startIdx+visibleRows, totalParams)
+
+	// Determine which scroll indicators to show
+	hasAbove := startIdx > 0
+	hasBelow := endIdx < totalParams
+
+	// Always show scroll indicator line to keep layout stable
+	if hasAbove {
+		lines = append(lines, faintStyle.Render("  ▲ more above"))
+	} else {
+		lines = append(lines, "")
+	}
+
+	for i := startIdx; i < endIdx; i++ {
+		p := m.params[i]
+		isSelected := m.pane == paneEditor && m.activeTab == tabParams && m.paramIdx == i
+
+		prefix := "  "
+		if isSelected && !m.insertMode {
+			prefix = "> "
+		}
+
+		// Determine box styles based on selection
+		keyBoxStyle := inputBoxStyle
+		valBoxStyle := inputBoxStyle
+
+		if isSelected {
+			if m.paramField == headerKey {
+				keyBoxStyle = activeInputBoxStyle
+			} else {
+				valBoxStyle = activeInputBoxStyle
+			}
+		}
+
+		// Render key and value in boxes
+		keyView := p.key.View()
+		valView := p.value.View()
+
+		// Ensure minimum width for empty inputs
+		keyWidth := max(lipgloss.Width(keyView), 15)
+		valWidth := max(lipgloss.Width(valView), 20)
+
+		keyBox := keyBoxStyle.Width(keyWidth).Render(keyView)
+		valBox := valBoxStyle.Width(valWidth).Render(valView)
+
+		// Separator styled to align vertically with boxes
+		separator := lipgloss.NewStyle().
+			Height(3).
+			AlignVertical(lipgloss.Center).
+			Render(" = ")
+
+		// Prefix styled to align vertically
+		prefixStyled := lipgloss.NewStyle().
+			Height(3).
+			AlignVertical(lipgloss.Center).
+			Render(prefix)
+
+		// Join horizontally to align the multi-line boxes
+		row := lipgloss.JoinHorizontal(lipgloss.Center, prefixStyled, keyBox, separator, valBox)
+
+		lines = append(lines, row)
+	}
+
+	// Always show scroll indicator line to keep layout stable
+	if hasBelow {
+		lines = append(lines, faintStyle.Render("  ▼ more below"))
+	} else {
+		lines = append(lines, "")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
 // viewHeadersTab renders the headers tab with key-value pairs

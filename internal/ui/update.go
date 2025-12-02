@@ -46,6 +46,59 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 				m.url, cmd = m.url.Update(msg)
+			case edParams:
+				// Params - handle tab to switch between key and value
+				switch msg.String() {
+				case "enter":
+					// Enter confirms/exits insert mode
+					m.insertMode = false
+					m.applyFocus()
+					return m, nil
+				case "tab":
+					// Move from key to value, or value to next row's key
+					if m.paramField == headerKey {
+						m.paramField = headerValue
+					} else if m.paramIdx < len(m.params)-1 {
+						m.paramField = headerKey
+						m.paramIdx++
+					}
+					m.applyFocus()
+					return m, nil
+				case "shift+tab":
+					// Move from value to key, or key to previous row's value
+					if m.paramField == headerValue {
+						m.paramField = headerKey
+					} else if m.paramIdx > 0 {
+						m.paramIdx--
+						m.paramField = headerValue
+					}
+					m.applyFocus()
+					return m, nil
+				case "up":
+					if m.paramIdx > 0 {
+						m.paramIdx--
+						m.applyFocus()
+					}
+					return m, nil
+				case "down":
+					if m.paramIdx < len(m.params)-1 {
+						m.paramIdx++
+						m.applyFocus()
+					}
+					return m, nil
+				default:
+					// Pass other keys to the focused param input
+					if m.paramIdx < len(m.params) {
+						if m.paramField == headerKey {
+							m.params[m.paramIdx].key, cmd = m.params[m.paramIdx].key.Update(msg)
+						} else {
+							m.params[m.paramIdx].value, cmd = m.params[m.paramIdx].value.Update(msg)
+						}
+						// Sync URL from params after edit
+						m.syncURLFromParams()
+					}
+				}
+				return m, cmd
 			case edHeaders:
 				if m.headersRaw {
 					// Raw mode - convert tab to actual tab character
@@ -181,14 +234,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.nextTab()
 				return m, nil
 			case "h":
-				// In headers tab, switch to key field
-				if m.activeTab == tabHeaders {
+				// Switch to key field in params or headers tab
+				switch m.activeTab {
+				case tabParams:
+					m.paramField = headerKey
+				case tabHeaders:
 					m.headerField = headerKey
 				}
 				return m, nil
 			case "l":
-				// In headers tab, switch to value field
-				if m.activeTab == tabHeaders {
+				// Switch to value field in params or headers tab
+				switch m.activeTab {
+				case tabParams:
+					m.paramField = headerValue
+				case tabHeaders:
 					m.headerField = headerValue
 				}
 				return m, nil
@@ -207,14 +266,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case "a":
-				// Add new header row (if in headers tab)
-				if m.activeTab == tabHeaders {
+				// Add new row in params or headers tab
+				switch m.activeTab {
+				case tabParams:
+					m.addParamRow()
+					m.syncURLFromParams()
+				case tabHeaders:
 					m.addHeaderRow()
 				}
 				return m, nil
 			case "d":
-				// Delete current header row (if in headers tab and more than one row)
-				if m.activeTab == tabHeaders {
+				// Delete current row in params or headers tab
+				switch m.activeTab {
+				case tabParams:
+					m.deleteParamRow()
+					m.syncURLFromParams()
+				case tabHeaders:
 					m.deleteHeaderRow()
 				}
 				return m, nil

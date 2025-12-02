@@ -328,11 +328,11 @@ func TestEditorTabNavigation(t *testing.T) {
 		t.Fatalf("initial activeTab = %v, want %v", m.activeTab, tabOverview)
 	}
 
-	// Press 'tab' should go to headers
+	// Press 'tab' should go to params (new tab after overview)
 	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
 	m = updated.(model)
-	if m.activeTab != tabHeaders {
-		t.Errorf("after 'tab' activeTab = %v, want %v", m.activeTab, tabHeaders)
+	if m.activeTab != tabParams {
+		t.Errorf("after 'tab' activeTab = %v, want %v", m.activeTab, tabParams)
 	}
 
 	// Press 'shift+tab' should go back to overview
@@ -354,11 +354,11 @@ func TestEditorLeftRightNavigation(t *testing.T) {
 		t.Fatalf("initial activeTab = %v, want %v", m.activeTab, tabOverview)
 	}
 
-	// Press 'right' should go to headers
+	// Press 'right' should go to params (new tab after overview)
 	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRight})
 	m = updated.(model)
-	if m.activeTab != tabHeaders {
-		t.Errorf("after 'right' activeTab = %v, want %v", m.activeTab, tabHeaders)
+	if m.activeTab != tabParams {
+		t.Errorf("after 'right' activeTab = %v, want %v", m.activeTab, tabParams)
 	}
 
 	// Press 'left' should go back to overview
@@ -714,12 +714,19 @@ func TestTabCycling(t *testing.T) {
 		t.Fatalf("initial activeTab = %v, want %v", m.activeTab, tabOverview)
 	}
 
-	// Next tab
+	// Next tab: Overview -> Params
+	m.nextTab()
+	if m.activeTab != tabParams {
+		t.Errorf("activeTab = %v, want %v", m.activeTab, tabParams)
+	}
+
+	// Next tab: Params -> Headers
 	m.nextTab()
 	if m.activeTab != tabHeaders {
 		t.Errorf("activeTab = %v, want %v", m.activeTab, tabHeaders)
 	}
 
+	// Next tab: Headers -> Body
 	m.nextTab()
 	if m.activeTab != tabBody {
 		t.Errorf("activeTab = %v, want %v", m.activeTab, tabBody)
@@ -746,6 +753,7 @@ func TestTabSwitchResetsEditorPart(t *testing.T) {
 	m.editorPart = edURL // Start at URL
 
 	// Switch to body tab - should set editorPart to edBody
+	m.nextTab() // params
 	m.nextTab() // headers
 	m.nextTab() // body
 	if m.activeTab != tabBody {
