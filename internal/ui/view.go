@@ -21,7 +21,10 @@ func (m model) View() string {
 		case paneSidebar:
 			status = "1/2/3: panes  j/k: select  enter: load"
 		case paneEditor:
-			status = "1/2/3: panes  tab: tabs  i: insert  j/k: fields"
+			status = "1/2/3: panes  i: insert  j/k: fields"
+			if m.activeTab == tabParams {
+				status += "  a: add  d: delete"
+			}
 			if m.activeTab == tabHeaders {
 				status += "  a: add  d: delete  r: toggle view"
 			}

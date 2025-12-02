@@ -217,13 +217,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		switch m.pane {
 		case paneSidebar:
-			// Handle tab navigation for sidebar tabs
+			// Handle tab switching with keybinds
 			switch msg.String() {
-			case "tab", "right":
-				m.nextSidebarTab()
+			case "h":
+				m.sidebarTab = sidebarHistory
+				m.updateSidebarItems()
 				return m, nil
-			case "shift+tab", "left":
-				m.prevSidebarTab()
+			case "s":
+				m.sidebarTab = sidebarSaved
+				m.updateSidebarItems()
 				return m, nil
 			}
 			m.sidebar, cmd = m.sidebar.Update(msg)
@@ -240,29 +242,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "down", "j":
 				m.nextEditorPart()
 				return m, nil
-			case "shift+tab", "left":
-				m.prevTab()
+			case "o":
+				// Switch to Overview tab
+				m.activeTab = tabOverview
+				m.resetEditorPartForTab()
 				return m, nil
-			case "tab", "right":
-				m.nextTab()
+			case "p":
+				// Switch to Params tab
+				m.activeTab = tabParams
+				m.resetEditorPartForTab()
 				return m, nil
 			case "h":
-				// Switch to key field in params or headers tab
-				switch m.activeTab {
-				case tabParams:
-					m.paramField = headerKey
-				case tabHeaders:
-					m.headerField = headerKey
-				}
+				// Switch to Headers tab
+				m.activeTab = tabHeaders
+				m.resetEditorPartForTab()
 				return m, nil
-			case "l":
-				// Switch to value field in params or headers tab
-				switch m.activeTab {
-				case tabParams:
-					m.paramField = headerValue
-				case tabHeaders:
-					m.headerField = headerValue
-				}
+			case "b":
+				// Switch to Body tab
+				m.activeTab = tabBody
+				m.resetEditorPartForTab()
 				return m, nil
 			case "r":
 				// Toggle raw mode in headers tab
@@ -296,6 +294,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.syncURLFromParams()
 				case tabHeaders:
 					m.deleteHeaderRow()
+				}
+				return m, nil
+			case "l":
+				// Switch to value field in params or headers tab
+				switch m.activeTab {
+				case tabParams:
+					m.paramField = headerValue
+				case tabHeaders:
+					m.headerField = headerValue
 				}
 				return m, nil
 			}

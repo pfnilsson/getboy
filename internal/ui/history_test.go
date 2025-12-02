@@ -173,7 +173,7 @@ func TestTruncateURL(t *testing.T) {
 	}
 }
 
-// TestSidebarTabNavigation tests tab/shift-tab switches sidebar tabs
+// TestSidebarTabNavigation tests keybind navigation for sidebar tabs
 func TestSidebarTabNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneSidebar
@@ -183,45 +183,18 @@ func TestSidebarTabNavigation(t *testing.T) {
 		t.Fatalf("initial sidebarTab = %v, want sidebarHistory", m.sidebarTab)
 	}
 
-	// Press tab - should go to Saved
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
+	// Press 's' - should go to Saved
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 	m = updated.(model)
 	if m.sidebarTab != sidebarSaved {
-		t.Errorf("after tab sidebarTab = %v, want sidebarSaved", m.sidebarTab)
+		t.Errorf("after 's' sidebarTab = %v, want sidebarSaved", m.sidebarTab)
 	}
 
-	// Press tab again - should cycle back to History
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyTab})
+	// Press 'h' - should go back to History
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
 	m = updated.(model)
 	if m.sidebarTab != sidebarHistory {
-		t.Errorf("after second tab sidebarTab = %v, want sidebarHistory", m.sidebarTab)
-	}
-
-	// Press shift+tab - should go to Saved
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
-	m = updated.(model)
-	if m.sidebarTab != sidebarSaved {
-		t.Errorf("after shift+tab sidebarTab = %v, want sidebarSaved", m.sidebarTab)
-	}
-}
-
-// TestSidebarRightLeftNavigation tests right/left arrows switch sidebar tabs
-func TestSidebarRightLeftNavigation(t *testing.T) {
-	m := New().(model)
-	m.pane = paneSidebar
-
-	// Press right - should go to Saved
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRight})
-	m = updated.(model)
-	if m.sidebarTab != sidebarSaved {
-		t.Errorf("after right sidebarTab = %v, want sidebarSaved", m.sidebarTab)
-	}
-
-	// Press left - should go back to History
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyLeft})
-	m = updated.(model)
-	if m.sidebarTab != sidebarHistory {
-		t.Errorf("after left sidebarTab = %v, want sidebarHistory", m.sidebarTab)
+		t.Errorf("after 'h' sidebarTab = %v, want sidebarHistory", m.sidebarTab)
 	}
 }
 

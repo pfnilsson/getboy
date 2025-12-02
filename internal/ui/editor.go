@@ -20,8 +20,8 @@ func (m model) viewEditor() string {
 		content = m.viewBodyTab()
 	}
 
-	// Define tabs
-	tabs := []string{"Overview", "Params", "Headers", "Body"}
+	// Define tabs with keybind hints
+	tabs := []string{"[O]verview", "[P]arams", "[H]eaders", "[B]ody"}
 
 	edBox := titledPaneWithTabs(
 		content,

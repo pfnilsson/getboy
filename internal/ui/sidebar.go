@@ -25,7 +25,7 @@ func (m model) viewSidebar() string {
 		content = emptyStyle.Render("Saved requests\ncoming soon...")
 	}
 
-	tabs := []string{"History", "Saved"}
+	tabs := []string{"[H]istory", "[S]aved"}
 
 	sbBox := titledPaneWithTabs(
 		content,

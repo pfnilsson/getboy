@@ -317,7 +317,7 @@ func TestEditorArrowNavigation(t *testing.T) {
 	}
 }
 
-// TestEditorTabNavigation tests that tab/shift-tab navigate tabs within editor
+// TestEditorTabNavigation tests keybind navigation between editor tabs
 func TestEditorTabNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
@@ -328,44 +328,32 @@ func TestEditorTabNavigation(t *testing.T) {
 		t.Fatalf("initial activeTab = %v, want %v", m.activeTab, tabOverview)
 	}
 
-	// Press 'tab' should go to params (new tab after overview)
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
+	// Press 'p' should go to params
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
 	m = updated.(model)
 	if m.activeTab != tabParams {
-		t.Errorf("after 'tab' activeTab = %v, want %v", m.activeTab, tabParams)
+		t.Errorf("after 'p' activeTab = %v, want %v", m.activeTab, tabParams)
 	}
 
-	// Press 'shift+tab' should go back to overview
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+	// Press 'h' should go to headers
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	m = updated.(model)
+	if m.activeTab != tabHeaders {
+		t.Errorf("after 'h' activeTab = %v, want %v", m.activeTab, tabHeaders)
+	}
+
+	// Press 'b' should go to body
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+	m = updated.(model)
+	if m.activeTab != tabBody {
+		t.Errorf("after 'b' activeTab = %v, want %v", m.activeTab, tabBody)
+	}
+
+	// Press 'o' should go back to overview
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'o'}})
 	m = updated.(model)
 	if m.activeTab != tabOverview {
-		t.Errorf("after 'shift+tab' activeTab = %v, want %v", m.activeTab, tabOverview)
-	}
-}
-
-// TestEditorLeftRightNavigation tests that left/right arrow keys navigate tabs
-func TestEditorLeftRightNavigation(t *testing.T) {
-	m := New().(model)
-	m.pane = paneEditor
-	m.insertMode = false
-
-	// Start at overview tab
-	if m.activeTab != tabOverview {
-		t.Fatalf("initial activeTab = %v, want %v", m.activeTab, tabOverview)
-	}
-
-	// Press 'right' should go to params (new tab after overview)
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRight})
-	m = updated.(model)
-	if m.activeTab != tabParams {
-		t.Errorf("after 'right' activeTab = %v, want %v", m.activeTab, tabParams)
-	}
-
-	// Press 'left' should go back to overview
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyLeft})
-	m = updated.(model)
-	if m.activeTab != tabOverview {
-		t.Errorf("after 'left' activeTab = %v, want %v", m.activeTab, tabOverview)
+		t.Errorf("after 'o' activeTab = %v, want %v", m.activeTab, tabOverview)
 	}
 }
 

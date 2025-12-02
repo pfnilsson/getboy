@@ -55,7 +55,7 @@ func TestHeadersNavigation(t *testing.T) {
 	}
 }
 
-// TestHeadersFieldNavigation tests h/l navigation between key and value
+// TestHeadersFieldNavigation tests l navigation to value field
 func TestHeadersFieldNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
@@ -70,12 +70,7 @@ func TestHeadersFieldNavigation(t *testing.T) {
 		t.Errorf("after 'l' headerField = %v, want headerValue", m.headerField)
 	}
 
-	// Navigate back to key with h
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
-	m = updated.(model)
-	if m.headerField != headerKey {
-		t.Errorf("after 'h' headerField = %v, want headerKey", m.headerField)
-	}
+	// 'h' now switches to Headers tab, use tab in insert mode to navigate fields
 }
 
 // TestHeadersInsertMode tests typing in header fields

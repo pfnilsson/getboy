@@ -18,8 +18,8 @@ func TestViewContainsPanes(t *testing.T) {
 	view := m.View()
 
 	// Check that all pane titles/tabs are present
-	// Sidebar now has tabs (History, Saved) instead of "Requests" title
-	expectedTitles := []string{"History", "Request", "Response"}
+	// Tabs now show keybind hints like [H]istory, [O]verview
+	expectedTitles := []string{"[H]istory", "Request", "Response"}
 	for _, title := range expectedTitles {
 		if !strings.Contains(view, title) {
 			t.Errorf("view does not contain pane title %q", title)
@@ -40,14 +40,14 @@ func TestViewSidebar(t *testing.T) {
 
 	sidebarView := m.viewSidebar()
 
-	// Should contain the History tab (sidebar now has tabs instead of title)
-	if !strings.Contains(sidebarView, "History") {
-		t.Error("sidebar view does not contain 'History' tab")
+	// Should contain the History tab with keybind hint
+	if !strings.Contains(sidebarView, "[H]istory") {
+		t.Error("sidebar view does not contain '[H]istory' tab")
 	}
 
-	// Should contain the Saved tab
-	if !strings.Contains(sidebarView, "Saved") {
-		t.Error("sidebar view does not contain 'Saved' tab")
+	// Should contain the Saved tab with keybind hint
+	if !strings.Contains(sidebarView, "[S]aved") {
+		t.Error("sidebar view does not contain '[S]aved' tab")
 	}
 
 	// Should contain the badge [1]
@@ -74,15 +74,15 @@ func TestViewEditor(t *testing.T) {
 		t.Error("editor view does not contain badge [2]")
 	}
 
-	// Should contain tabs in title bar
-	if !strings.Contains(editorView, "Overview") {
-		t.Error("editor view does not contain 'Overview' tab")
+	// Should contain tabs with keybind hints in title bar
+	if !strings.Contains(editorView, "[O]verview") {
+		t.Error("editor view does not contain '[O]verview' tab")
 	}
-	if !strings.Contains(editorView, "Headers") {
-		t.Error("editor view does not contain 'Headers' tab")
+	if !strings.Contains(editorView, "[H]eaders") {
+		t.Error("editor view does not contain '[H]eaders' tab")
 	}
-	if !strings.Contains(editorView, "Body") {
-		t.Error("editor view does not contain 'Body' tab")
+	if !strings.Contains(editorView, "[B]ody") {
+		t.Error("editor view does not contain '[B]ody' tab")
 	}
 
 	// Should contain labels (when on overview tab)
@@ -232,9 +232,6 @@ func TestViewContextualStatusBar(t *testing.T) {
 	// Test editor pane status
 	m.pane = paneEditor
 	view = m.View()
-	if !strings.Contains(view, "tab: tabs") {
-		t.Error("editor pane should show 'tab: tabs' hint")
-	}
 	if !strings.Contains(view, "i: insert") {
 		t.Error("editor pane should show 'i: insert' hint")
 	}

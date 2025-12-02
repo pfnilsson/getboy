@@ -55,7 +55,7 @@ func TestParamsNavigation(t *testing.T) {
 	}
 }
 
-// TestParamsFieldNavigation tests h/l navigation between key and value
+// TestParamsFieldNavigation tests l navigation to value field
 func TestParamsFieldNavigation(t *testing.T) {
 	m := New().(model)
 	m.pane = paneEditor
@@ -70,12 +70,7 @@ func TestParamsFieldNavigation(t *testing.T) {
 		t.Errorf("after 'l' paramField = %v, want headerValue", m.paramField)
 	}
 
-	// Navigate back to key with h
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
-	m = updated.(model)
-	if m.paramField != headerKey {
-		t.Errorf("after 'h' paramField = %v, want headerKey", m.paramField)
-	}
+	// 'h' now switches to Headers tab, use tab in insert mode to navigate fields
 }
 
 // TestParamsInsertMode tests typing in param fields
