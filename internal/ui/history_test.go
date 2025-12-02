@@ -106,7 +106,7 @@ func TestAddToHistory(t *testing.T) {
 	t.Run("trims to max size", func(t *testing.T) {
 		var entries []historyEntry
 		// Add more than maxHistoryItems with unique URLs
-		for i := 0; i < maxHistoryItems+10; i++ {
+		for i := range maxHistoryItems + 10 {
 			entry := historyEntry{Method: "GET", URL: "https://example.com/page/" + string(rune(i))}
 			entries = addToHistory(entries, entry)
 		}
@@ -320,7 +320,9 @@ func TestSaveAndLoadHistory(t *testing.T) {
 	tmpDir := t.TempDir()
 	origHome := os.Getenv("HOME")
 	t.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", origHome)
+	defer func() {
+		_ = os.Setenv("HOME", origHome)
+	}()
 
 	// Create test history
 	entries := []historyEntry{
