@@ -63,8 +63,8 @@ type model struct {
 	height int
 
 	sidebar    list.Model
-	sidebarTab sidebarTab      // History or Saved
-	history    []historyEntry  // persisted history
+	sidebarTab sidebarTab     // History or Saved
+	history    []historyEntry // persisted history
 
 	methodIdx      int // index into httpMethods
 	url            textinput.Model
@@ -537,18 +537,6 @@ func (m model) highlightBodyContent(content string) string {
 	default:
 		return content
 	}
-}
-
-// nextSidebarTab switches to the next sidebar tab
-func (m *model) nextSidebarTab() {
-	m.sidebarTab = (m.sidebarTab + 1) % 2
-	m.updateSidebarItems()
-}
-
-// prevSidebarTab switches to the previous sidebar tab
-func (m *model) prevSidebarTab() {
-	m.sidebarTab = (m.sidebarTab + 1) % 2
-	m.updateSidebarItems()
 }
 
 // updateSidebarItems updates the sidebar list based on current tab
