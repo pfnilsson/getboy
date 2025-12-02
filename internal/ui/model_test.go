@@ -442,11 +442,14 @@ func TestEnterKeyLoadsItemFromSidebar(t *testing.T) {
 	m := New().(model)
 	m.pane = paneSidebar
 
+	// Add a history item to load
+	m.addToHistoryAndSave("GET", "https://httpbin.org/get", "", nil)
+
 	// Press enter to load the first item
 	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	m = updated.(model)
 
-	// Should have loaded the first example item
+	// Should have loaded the history item
 	if m.methodValue() != "GET" {
 		t.Errorf("method = %q, want %q", m.methodValue(), "GET")
 	}

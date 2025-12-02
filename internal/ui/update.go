@@ -194,6 +194,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.setMethod(it.method)
 					m.url.SetValue(it.url)
 					m.body.SetValue(it.body)
+					m.setHeadersFromMap(it.headers)
 					m.status = fmt.Sprintf("Loaded '%s'", it.title)
 				}
 				return m, nil
@@ -204,15 +205,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.status = "Enter a URL first"
 				return m, nil
 			}
+			headers := m.getHeaders()
+			// Add to history before sending
+			m.addToHistoryAndSave(method, url, m.body.Value(), headers)
 			m.err = nil
 			m.loading = true
 			m.status = fmt.Sprintf("%s %s…", method, url)
-			return m, doHTTP(method, url, m.body.Value(), m.getHeaders())
+			return m, doHTTP(method, url, m.body.Value(), headers)
 		}
 
 		var cmd tea.Cmd
 		switch m.pane {
 		case paneSidebar:
+			// Handle tab navigation for sidebar tabs
+			switch msg.String() {
+			case "tab", "right":
+				m.nextSidebarTab()
+				return m, nil
+			case "shift+tab", "left":
+				m.prevSidebarTab()
+				return m, nil
+			}
 			m.sidebar, cmd = m.sidebar.Update(msg)
 			return m, cmd
 		case paneEditor:

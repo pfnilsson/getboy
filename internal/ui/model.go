@@ -62,7 +62,9 @@ type model struct {
 	width  int
 	height int
 
-	sidebar list.Model
+	sidebar    list.Model
+	sidebarTab sidebarTab      // History or Saved
+	history    []historyEntry  // persisted history
 
 	methodIdx      int // index into httpMethods
 	url            textinput.Model
@@ -118,10 +120,14 @@ func (m *model) prevMethod() {
 }
 
 func New() tea.Model {
-	items := []list.Item{
-		reqItem{title: "Example GET", desc: "GET https://httpbin.org/get", method: "GET", url: "https://httpbin.org/get"},
-		reqItem{title: "Echo POST", desc: "POST https://httpbin.org/post", method: "POST", url: "https://httpbin.org/post", body: `{"hello":"world"}`},
-		reqItem{title: "Example JSON", desc: "GET https://jsonplaceholder.typicode.com/todos/1", method: "GET", url: "https://jsonplaceholder.typicode.com/todos/1"},
+	// Load history from disk
+	history, _ := loadHistory() // Ignore error, start with empty history
+
+	// Convert history to list items
+	historyItems := historyToItems(history)
+	items := make([]list.Item, len(historyItems))
+	for i, item := range historyItems {
+		items[i] = item
 	}
 
 	delegate := list.NewDefaultDelegate()
@@ -179,6 +185,8 @@ func New() tea.Model {
 
 	return model{
 		sidebar:        sb,
+		sidebarTab:     sidebarHistory,
+		history:        history,
 		methodIdx:      0, // Default to GET
 		url:            u,
 		params:         params,
@@ -529,4 +537,68 @@ func (m model) highlightBodyContent(content string) string {
 	default:
 		return content
 	}
+}
+
+// nextSidebarTab switches to the next sidebar tab
+func (m *model) nextSidebarTab() {
+	m.sidebarTab = (m.sidebarTab + 1) % 2
+	m.updateSidebarItems()
+}
+
+// prevSidebarTab switches to the previous sidebar tab
+func (m *model) prevSidebarTab() {
+	m.sidebarTab = (m.sidebarTab + 1) % 2
+	m.updateSidebarItems()
+}
+
+// updateSidebarItems updates the sidebar list based on current tab
+func (m *model) updateSidebarItems() {
+	var items []list.Item
+	switch m.sidebarTab {
+	case sidebarHistory:
+		historyItems := historyToItems(m.history)
+		items = make([]list.Item, len(historyItems))
+		for i, item := range historyItems {
+			items[i] = item
+		}
+	case sidebarSaved:
+		// Empty for now - "coming soon"
+		items = []list.Item{}
+	}
+	m.sidebar.SetItems(items)
+}
+
+// addToHistoryAndSave adds an entry to history and persists to disk
+func (m *model) addToHistoryAndSave(method, url, body string, headers map[string]string) {
+	entry := historyEntry{
+		Method:  method,
+		URL:     url,
+		Body:    body,
+		Headers: headers,
+	}
+	m.history = addToHistory(m.history, entry)
+	_ = saveHistory(m.history) // Ignore error, history is best-effort
+
+	// Update sidebar if on history tab
+	if m.sidebarTab == sidebarHistory {
+		m.updateSidebarItems()
+	}
+}
+
+// setHeadersFromMap sets headers from a map (used when loading from history)
+func (m *model) setHeadersFromMap(hdrs map[string]string) {
+	if len(hdrs) == 0 {
+		m.headers = []headerRow{newHeaderRow()}
+		m.headerIdx = 0
+		return
+	}
+
+	m.headers = nil
+	for k, v := range hdrs {
+		row := newHeaderRow()
+		row.key.SetValue(k)
+		row.value.SetValue(v)
+		m.headers = append(m.headers, row)
+	}
+	m.headerIdx = 0
 }

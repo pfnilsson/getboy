@@ -17,8 +17,9 @@ func TestViewContainsPanes(t *testing.T) {
 
 	view := m.View()
 
-	// Check that all pane titles are present
-	expectedTitles := []string{"Requests", "Request", "Response"}
+	// Check that all pane titles/tabs are present
+	// Sidebar now has tabs (History, Saved) instead of "Requests" title
+	expectedTitles := []string{"History", "Request", "Response"}
 	for _, title := range expectedTitles {
 		if !strings.Contains(view, title) {
 			t.Errorf("view does not contain pane title %q", title)
@@ -39,9 +40,14 @@ func TestViewSidebar(t *testing.T) {
 
 	sidebarView := m.viewSidebar()
 
-	// Should contain the pane title
-	if !strings.Contains(sidebarView, "Requests") {
-		t.Error("sidebar view does not contain 'Requests' title")
+	// Should contain the History tab (sidebar now has tabs instead of title)
+	if !strings.Contains(sidebarView, "History") {
+		t.Error("sidebar view does not contain 'History' tab")
+	}
+
+	// Should contain the Saved tab
+	if !strings.Contains(sidebarView, "Saved") {
+		t.Error("sidebar view does not contain 'Saved' tab")
 	}
 
 	// Should contain the badge [1]

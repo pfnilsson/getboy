@@ -117,7 +117,12 @@ func titledPaneWithTabs(content string, width, height int, focused bool, leftBad
 			tabParts = append(tabParts, style.Render(tab))
 		}
 		tabsRendered = lipgloss.JoinHorizontal(lipgloss.Top, tabParts...)
-		left += border.Render(" "+h+" ") + tabsRendered + border.Render(" ")
+		// Only add dash separator before tabs if there's a leftTitle
+		if leftTitle != "" {
+			left += border.Render(" "+h+" ") + tabsRendered + border.Render(" ")
+		} else {
+			left += border.Render(" ") + tabsRendered + border.Render(" ")
+		}
 	} else if leftTitle != "" {
 		left += border.Render(" ")
 	}

@@ -35,12 +35,20 @@ const (
 	tabBody
 )
 
+type sidebarTab int
+
+const (
+	sidebarHistory sidebarTab = iota
+	sidebarSaved
+)
+
 type reqItem struct {
-	title  string
-	desc   string
-	method string
-	url    string
-	body   string
+	title   string
+	desc    string
+	method  string
+	url     string
+	body    string
+	headers map[string]string
 }
 
 func (i reqItem) Title() string {
