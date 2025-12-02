@@ -347,3 +347,15 @@ func (m model) ensureURL(u string) string {
 	}
 	return u
 }
+
+// getHeaders returns headers as a map, skipping empty keys
+func (m model) getHeaders() map[string]string {
+	result := make(map[string]string)
+	for _, h := range m.headers {
+		k := strings.TrimSpace(h.key.Value())
+		if k != "" {
+			result[k] = h.value.Value()
+		}
+	}
+	return result
+}

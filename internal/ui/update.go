@@ -131,7 +131,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = nil
 			m.loading = true
 			m.status = fmt.Sprintf("%s %s…", method, url)
-			return m, doHTTP(method, url, m.body.Value())
+			return m, doHTTP(method, url, m.body.Value(), m.getHeaders())
 		}
 
 		var cmd tea.Cmd
