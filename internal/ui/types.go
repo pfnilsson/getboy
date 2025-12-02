@@ -13,7 +13,16 @@ type editorFocus int
 const (
 	edMethod editorFocus = iota
 	edURL
+	edHeaders
 	edBody
+)
+
+// headerField tracks which part of a header row is focused
+type headerField int
+
+const (
+	headerKey headerField = iota
+	headerValue
 )
 
 type requestTab int

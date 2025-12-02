@@ -37,6 +37,57 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case edURL:
 				m.url, cmd = m.url.Update(msg)
+			case edHeaders:
+				if m.headersRaw {
+					// Raw mode - pass all keys to the textarea
+					m.headersRawText, cmd = m.headersRawText.Update(msg)
+					return m, cmd
+				}
+				// Structured mode - handle tab to switch between key and value
+				switch msg.String() {
+				case "tab":
+					// Move from key to value, or value to next row's key
+					if m.headerField == headerKey {
+						m.headerField = headerValue
+					} else if m.headerIdx < len(m.headers)-1 {
+						m.headerField = headerKey
+						m.headerIdx++
+					}
+					m.applyFocus()
+					return m, nil
+				case "shift+tab":
+					// Move from value to key, or key to previous row's value
+					if m.headerField == headerValue {
+						m.headerField = headerKey
+					} else if m.headerIdx > 0 {
+						m.headerIdx--
+						m.headerField = headerValue
+					}
+					m.applyFocus()
+					return m, nil
+				case "up":
+					if m.headerIdx > 0 {
+						m.headerIdx--
+						m.applyFocus()
+					}
+					return m, nil
+				case "down":
+					if m.headerIdx < len(m.headers)-1 {
+						m.headerIdx++
+						m.applyFocus()
+					}
+					return m, nil
+				default:
+					// Pass other keys to the focused header input
+					if m.headerIdx < len(m.headers) {
+						if m.headerField == headerKey {
+							m.headers[m.headerIdx].key, cmd = m.headers[m.headerIdx].key.Update(msg)
+						} else {
+							m.headers[m.headerIdx].value, cmd = m.headers[m.headerIdx].value.Update(msg)
+						}
+					}
+				}
+				return m, cmd
 			case edBody:
 				m.body, cmd = m.body.Update(msg)
 			}
@@ -105,6 +156,44 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "tab", "right":
 				m.nextTab()
+				return m, nil
+			case "h":
+				// In headers tab, switch to key field
+				if m.activeTab == tabHeaders {
+					m.headerField = headerKey
+				}
+				return m, nil
+			case "l":
+				// In headers tab, switch to value field
+				if m.activeTab == tabHeaders {
+					m.headerField = headerValue
+				}
+				return m, nil
+			case "r":
+				// Toggle raw mode in headers tab
+				if m.activeTab == tabHeaders {
+					if m.headersRaw {
+						// Switching from raw to structured - parse the raw text
+						m.headersFromRaw(m.headersRawText.Value())
+					} else {
+						// Switching from structured to raw - convert to text
+						m.headersRawText.SetValue(m.headersToRaw())
+					}
+					m.headersRaw = !m.headersRaw
+					m.applyFocus()
+				}
+				return m, nil
+			case "a":
+				// Add new header row (if in headers tab)
+				if m.activeTab == tabHeaders {
+					m.addHeaderRow()
+				}
+				return m, nil
+			case "d":
+				// Delete current header row (if in headers tab and more than one row)
+				if m.activeTab == tabHeaders {
+					m.deleteHeaderRow()
+				}
 				return m, nil
 			}
 			// Don't pass unhandled keys to text inputs when not in insert mode

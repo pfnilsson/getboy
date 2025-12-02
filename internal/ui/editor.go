@@ -82,11 +82,129 @@ func (m model) viewOverviewTab() string {
 	return lipgloss.JoinVertical(lipgloss.Left, methodLine, urlLine)
 }
 
-// viewHeadersTab renders the headers tab (placeholder for now)
+// viewHeadersTab renders the headers tab with key-value pairs
 func (m model) viewHeadersTab() string {
-	return lipgloss.NewStyle().
-		Faint(true).
-		Render("Headers tab - coming soon...")
+	selectedStyle := lipgloss.NewStyle().Foreground(theme.Current.ListSelectedText)
+	faintStyle := lipgloss.NewStyle().Faint(true)
+
+	// Mode toggle indicator: [Structured / Raw]
+	var modeIndicator string
+	if m.headersRaw {
+		modeIndicator = "  [" + faintStyle.Render("Structured") + " / " + selectedStyle.Render("Raw") + "]"
+	} else {
+		modeIndicator = "  [" + selectedStyle.Render("Structured") + " / " + faintStyle.Render("Raw") + "]"
+	}
+
+	var lines []string
+	lines = append(lines, modeIndicator)
+
+	// Style for input boxes - rounded border
+	inputBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(theme.Current.BorderInactive).
+		Padding(0, 1)
+
+	activeInputBoxStyle := inputBoxStyle.
+		BorderForeground(theme.Current.ListSelectedText)
+
+	if m.headersRaw {
+		// Raw mode - show the textarea for free-form editing
+		lines = append(lines, "  "+m.headersRawText.View())
+	} else {
+		// Key-value mode with scrolling
+		// Each header row is 3 lines tall (border + content + border)
+		rowHeight := 3
+		// Available height: editor height - pane borders (2) - mode indicator line (1) - scroll indicators (2) - padding (1)
+		// Always reserve space for scroll indicators to prevent jumping
+		availableHeight := m.editorHeight() - 6
+		totalHeaders := len(m.headers)
+
+		visibleRows := max(availableHeight/rowHeight, 1)
+
+		// Calculate scroll window to keep selected row visible
+		startIdx := 0
+		if totalHeaders > visibleRows {
+			// Center the selected row in the visible window
+			startIdx = m.headerIdx - visibleRows/2
+			if startIdx < 0 {
+				startIdx = 0
+			}
+			if startIdx > totalHeaders-visibleRows {
+				startIdx = totalHeaders - visibleRows
+			}
+		}
+		endIdx := min(startIdx+visibleRows, totalHeaders)
+
+		// Determine which scroll indicators to show
+		hasAbove := startIdx > 0
+		hasBelow := endIdx < totalHeaders
+
+		// Always show scroll indicator line (empty or with arrow) to keep layout stable
+		if hasAbove {
+			lines = append(lines, faintStyle.Render("  ▲ more above"))
+		} else {
+			lines = append(lines, "") // Empty line to reserve space
+		}
+
+		for i := startIdx; i < endIdx; i++ {
+			h := m.headers[i]
+			isSelected := m.pane == paneEditor && m.activeTab == tabHeaders && m.headerIdx == i
+
+			prefix := "  "
+			if isSelected && !m.insertMode {
+				prefix = "> "
+			}
+
+			// Determine box styles based on selection
+			keyBoxStyle := inputBoxStyle
+			valBoxStyle := inputBoxStyle
+
+			if isSelected {
+				if m.headerField == headerKey {
+					keyBoxStyle = activeInputBoxStyle
+				} else {
+					valBoxStyle = activeInputBoxStyle
+				}
+			}
+
+			// Render key and value in boxes
+			keyView := h.key.View()
+			valView := h.value.View()
+
+			// Ensure minimum width for empty inputs
+			keyWidth := max(lipgloss.Width(keyView), 15)
+			valWidth := max(lipgloss.Width(valView), 20)
+
+			keyBox := keyBoxStyle.Width(keyWidth).Render(keyView)
+			valBox := valBoxStyle.Width(valWidth).Render(valView)
+
+			// Separator styled to align vertically with boxes
+			separator := lipgloss.NewStyle().
+				Height(3).
+				AlignVertical(lipgloss.Center).
+				Render(" : ")
+
+			// Prefix styled to align vertically
+			prefixStyled := lipgloss.NewStyle().
+				Height(3).
+				AlignVertical(lipgloss.Center).
+				Render(prefix)
+
+			// Join horizontally to align the multi-line boxes
+			row := lipgloss.JoinHorizontal(lipgloss.Center, prefixStyled, keyBox, separator, valBox)
+
+			lines = append(lines, row)
+		}
+
+		// Always show scroll indicator line (empty or with arrow) to keep layout stable
+		if hasBelow {
+			lines = append(lines, faintStyle.Render("  ▼ more below"))
+		} else {
+			lines = append(lines, "") // Empty line to reserve space
+		}
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
 // viewBodyTab renders the body tab with the request body textarea

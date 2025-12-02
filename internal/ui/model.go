@@ -8,11 +8,33 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/pfnilsson/getboy/internal/ui/theme"
 )
 
 // HTTP methods available in the dropdown
 var httpMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+
+// headerRow represents a single header key-value pair
+type headerRow struct {
+	key   textinput.Model
+	value textinput.Model
+}
+
+// newHeaderRow creates a new empty header row
+func newHeaderRow() headerRow {
+	k := textinput.New()
+	k.Placeholder = "Header-Name"
+	k.CharLimit = 256
+	k.Prompt = ""
+
+	v := textinput.New()
+	v.Placeholder = "value"
+	v.CharLimit = 4096
+	v.Prompt = ""
+
+	return headerRow{key: k, value: v}
+}
 
 type model struct {
 	width  int
@@ -20,15 +42,20 @@ type model struct {
 
 	sidebar list.Model
 
-	methodIdx int // index into httpMethods
-	url       textinput.Model
-	body      textarea.Model
-	view      viewport.Model
+	methodIdx      int // index into httpMethods
+	url            textinput.Model
+	headers        []headerRow
+	headersRawText textarea.Model // textarea for raw headers mode
+	body           textarea.Model
+	view           viewport.Model
 
-	pane       focusPane
-	editorPart editorFocus
-	activeTab  requestTab
-	insertMode bool
+	pane        focusPane
+	editorPart  editorFocus
+	activeTab   requestTab
+	insertMode  bool
+	headerIdx   int         // which header row is selected
+	headerField headerField // key or value within the row
+	headersRaw  bool        // toggle for raw view mode
 
 	status  string
 	loading bool
@@ -98,23 +125,99 @@ func New() tea.Model {
 	t.Placeholder = "Request body (optional)"
 	t.ShowLineNumbers = false
 
+	// Raw headers textarea
+	rawHeaders := textarea.New()
+	rawHeaders.SetWidth(40)
+	rawHeaders.SetHeight(6)
+	rawHeaders.Placeholder = ""
+	rawHeaders.ShowLineNumbers = false
+	rawHeaders.Prompt = ""
+	rawHeaders.FocusedStyle.CursorLine = lipgloss.NewStyle()
+	rawHeaders.BlurredStyle.CursorLine = lipgloss.NewStyle()
+
 	// Ensure all inputs start blurred (not in insert mode)
 	u.Blur()
 	t.Blur()
+	rawHeaders.Blur()
 
 	vp := viewport.New(0, 0)
 	vp.SetContent("Response will appear here…")
 
+	// Start with one empty header row
+	headers := []headerRow{newHeaderRow()}
+
 	return model{
-		sidebar:   sb,
-		methodIdx: 0, // Default to GET
-		url:       u,
-		body:      t,
-		view:      vp,
-		pane:      paneSidebar,
-		activeTab: tabOverview,
-		status:    "1/2/3: panes  j/k: select  enter: load",
+		sidebar:        sb,
+		methodIdx:      0, // Default to GET
+		url:            u,
+		headers:        headers,
+		headersRawText: rawHeaders,
+		body:           t,
+		view:           vp,
+		pane:           paneSidebar,
+		activeTab:      tabOverview,
+		status:         "1/2/3: panes  j/k: select  enter: load",
 	}
+}
+
+// addHeaderRow adds a new header row after the current one
+func (m *model) addHeaderRow() {
+	newRow := newHeaderRow()
+	// Insert after current row
+	idx := m.headerIdx + 1
+	m.headers = append(m.headers[:idx], append([]headerRow{newRow}, m.headers[idx:]...)...)
+	m.headerIdx = idx
+	m.headerField = headerKey
+}
+
+// deleteHeaderRow removes the current header row if there's more than one
+func (m *model) deleteHeaderRow() {
+	if len(m.headers) <= 1 {
+		// Can't delete the last row, just clear it
+		m.headers[0].key.SetValue("")
+		m.headers[0].value.SetValue("")
+		return
+	}
+	m.headers = append(m.headers[:m.headerIdx], m.headers[m.headerIdx+1:]...)
+	if m.headerIdx >= len(m.headers) {
+		m.headerIdx = len(m.headers) - 1
+	}
+}
+
+// headersToRaw converts headers to raw text format
+func (m model) headersToRaw() string {
+	var lines []string
+	for _, h := range m.headers {
+		k, v := h.key.Value(), h.value.Value()
+		if k != "" || v != "" {
+			lines = append(lines, k+": "+v)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// headersFromRaw parses raw text into header rows
+func (m *model) headersFromRaw(raw string) {
+	lines := strings.Split(raw, "\n")
+	m.headers = nil
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		row := newHeaderRow()
+		if idx := strings.Index(line, ":"); idx >= 0 {
+			row.key.SetValue(strings.TrimSpace(line[:idx]))
+			row.value.SetValue(strings.TrimSpace(line[idx+1:]))
+		} else {
+			row.key.SetValue(line)
+		}
+		m.headers = append(m.headers, row)
+	}
+	if len(m.headers) == 0 {
+		m.headers = []headerRow{newHeaderRow()}
+	}
+	m.headerIdx = 0
 }
 
 func (m model) Init() tea.Cmd { return nil }
@@ -141,7 +244,11 @@ func (m *model) nextEditorPart() {
 			m.editorPart = edMethod
 		}
 	case tabHeaders:
-		// Headers tab has no editable fields yet
+		m.editorPart = edHeaders
+		// Move to next header row
+		if m.headerIdx < len(m.headers)-1 {
+			m.headerIdx++
+		}
 	case tabBody:
 		// Body tab has only one field, no navigation needed
 		m.editorPart = edBody
@@ -159,7 +266,11 @@ func (m *model) prevEditorPart() {
 			m.editorPart = edURL
 		}
 	case tabHeaders:
-		// Headers tab has no editable fields yet
+		m.editorPart = edHeaders
+		// Move to previous header row
+		if m.headerIdx > 0 {
+			m.headerIdx--
+		}
 	case tabBody:
 		// Body tab has only one field, no navigation needed
 		m.editorPart = edBody
@@ -183,7 +294,9 @@ func (m *model) resetEditorPartForTab() {
 	case tabOverview:
 		m.editorPart = edMethod
 	case tabHeaders:
-		// No editable fields yet
+		m.editorPart = edHeaders
+		m.headerIdx = 0
+		m.headerField = headerKey
 	case tabBody:
 		m.editorPart = edBody
 	}
@@ -192,6 +305,12 @@ func (m *model) resetEditorPartForTab() {
 func (m *model) applyFocus() {
 	m.url.Blur()
 	m.body.Blur()
+	m.headersRawText.Blur()
+	// Blur all header inputs
+	for i := range m.headers {
+		m.headers[i].key.Blur()
+		m.headers[i].value.Blur()
+	}
 
 	// Only focus text inputs when in insert mode
 	// Method is a dropdown, not a text input, so it doesn't need focus
@@ -201,6 +320,17 @@ func (m *model) applyFocus() {
 			// Method is a dropdown - no focus needed
 		case edURL:
 			m.url.Focus()
+		case edHeaders:
+			if m.headersRaw {
+				// In raw mode, focus the textarea
+				m.headersRawText.Focus()
+			} else if m.headerIdx >= 0 && m.headerIdx < len(m.headers) {
+				if m.headerField == headerKey {
+					m.headers[m.headerIdx].key.Focus()
+				} else {
+					m.headers[m.headerIdx].value.Focus()
+				}
+			}
 		case edBody:
 			m.body.Focus()
 		}
