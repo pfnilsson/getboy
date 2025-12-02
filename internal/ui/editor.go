@@ -209,13 +209,28 @@ func (m model) viewBodyTab() string {
 	bodyStyle := normalStyle
 	bodyPrefix := "  "
 
+	isEditing := m.pane == paneEditor && m.insertMode && m.activeTab == tabBody
+
 	if m.pane == paneEditor && !m.insertMode && m.activeTab == tabBody {
 		bodyPrefix = "> "
 		bodyStyle = selectedStyle
 	}
 
 	bodyTitle := bodyStyle.Render(bodyPrefix + "Body")
-	bodyView := m.body.View()
+
+	var bodyView string
+	if isEditing {
+		// Show plain textarea when editing
+		bodyView = m.body.View()
+	} else {
+		// Show syntax-highlighted content when not editing
+		content := m.body.Value()
+		if content == "" {
+			bodyView = m.body.View() // Show placeholder
+		} else {
+			bodyView = m.highlightBodyContent(content)
+		}
+	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, bodyTitle, bodyView)
 }

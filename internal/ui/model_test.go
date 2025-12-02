@@ -899,3 +899,89 @@ func TestEnterDoesNotExitInsertModeInBody(t *testing.T) {
 		t.Error("insertMode should remain true after enter in body")
 	}
 }
+
+// TestGetContentType tests case-insensitive Content-Type header lookup
+func TestGetContentType(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		value    string
+		expected string
+	}{
+		{"lowercase", "content-type", "application/json", "application/json"},
+		{"uppercase", "CONTENT-TYPE", "application/json", "application/json"},
+		{"mixed case", "Content-Type", "Application/JSON", "application/json"},
+		{"with charset", "Content-Type", "application/json; charset=utf-8", "application/json; charset=utf-8"},
+		{"xml", "Content-Type", "application/xml", "application/xml"},
+		{"no content-type", "Authorization", "Bearer token", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := New().(model)
+			m.headers[0].key.SetValue(tt.key)
+			m.headers[0].value.SetValue(tt.value)
+
+			result := m.getContentType()
+			if result != tt.expected {
+				t.Errorf("getContentType() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestHighlightBodyContent tests syntax highlighting based on Content-Type
+func TestHighlightBodyContent(t *testing.T) {
+	t.Run("json content type applies highlighting", func(t *testing.T) {
+		m := New().(model)
+		m.headers[0].key.SetValue("Content-Type")
+		m.headers[0].value.SetValue("application/json")
+
+		content := `{"key": "value"}`
+		result := m.highlightBodyContent(content)
+
+		// Highlighted content should be different (contains ANSI codes)
+		if result == content {
+			t.Error("JSON content should be highlighted")
+		}
+	})
+
+	t.Run("xml content type applies highlighting", func(t *testing.T) {
+		m := New().(model)
+		m.headers[0].key.SetValue("Content-Type")
+		m.headers[0].value.SetValue("application/xml")
+
+		content := `<root><item>value</item></root>`
+		result := m.highlightBodyContent(content)
+
+		// Highlighted content should be different
+		if result == content {
+			t.Error("XML content should be highlighted")
+		}
+	})
+
+	t.Run("no content type returns unchanged", func(t *testing.T) {
+		m := New().(model)
+		// No Content-Type header set
+
+		content := `plain text`
+		result := m.highlightBodyContent(content)
+
+		if result != content {
+			t.Errorf("plain text should be unchanged, got %q", result)
+		}
+	})
+
+	t.Run("text/plain returns unchanged", func(t *testing.T) {
+		m := New().(model)
+		m.headers[0].key.SetValue("Content-Type")
+		m.headers[0].value.SetValue("text/plain")
+
+		content := `plain text`
+		result := m.highlightBodyContent(content)
+
+		if result != content {
+			t.Errorf("text/plain should be unchanged, got %q", result)
+		}
+	})
+}

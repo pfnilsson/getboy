@@ -359,3 +359,27 @@ func (m model) getHeaders() map[string]string {
 	}
 	return result
 }
+
+// getContentType returns the Content-Type header value (case-insensitive lookup)
+func (m model) getContentType() string {
+	for _, h := range m.headers {
+		if strings.EqualFold(strings.TrimSpace(h.key.Value()), "content-type") {
+			return strings.ToLower(strings.TrimSpace(h.value.Value()))
+		}
+	}
+	return ""
+}
+
+// highlightBodyContent applies syntax highlighting based on Content-Type header
+func (m model) highlightBodyContent(content string) string {
+	ct := m.getContentType()
+
+	switch {
+	case strings.Contains(ct, "json"):
+		return highlight(content, "json")
+	case strings.Contains(ct, "xml"):
+		return highlight(content, "xml")
+	default:
+		return content
+	}
+}
