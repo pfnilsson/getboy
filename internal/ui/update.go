@@ -27,15 +27,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var cmd tea.Cmd
 			switch m.editorPart {
 			case edMethod:
-				// Method is a dropdown - handle j/k for cycling
+				// Method is a dropdown - handle j/k for cycling, enter to confirm
 				switch msg.String() {
 				case "k", "up":
 					m.prevMethod()
 				case "j", "down":
 					m.nextMethod()
+				case "enter":
+					m.insertMode = false
+					m.applyFocus()
 				}
 				return m, nil
 			case edURL:
+				// Enter confirms/exits insert mode for URL
+				if msg.String() == "enter" {
+					m.insertMode = false
+					m.applyFocus()
+					return m, nil
+				}
 				m.url, cmd = m.url.Update(msg)
 			case edHeaders:
 				if m.headersRaw {
@@ -45,6 +54,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				// Structured mode - handle tab to switch between key and value
 				switch msg.String() {
+				case "enter":
+					// Enter confirms/exits insert mode in structured headers
+					m.insertMode = false
+					m.applyFocus()
+					return m, nil
 				case "tab":
 					// Move from key to value, or value to next row's key
 					if m.headerField == headerKey {

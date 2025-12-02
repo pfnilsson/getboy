@@ -810,3 +810,92 @@ func TestResponsePaneKeyHandling(t *testing.T) {
 		t.Errorf("pane = %v, want %v", m.pane, paneResponse)
 	}
 }
+
+// TestEnterExitsInsertModeInOverview tests that enter exits insert mode for method and URL
+func TestEnterExitsInsertModeInOverview(t *testing.T) {
+	t.Run("method dropdown", func(t *testing.T) {
+		m := New().(model)
+		m.pane = paneEditor
+		m.activeTab = tabOverview
+		m.editorPart = edMethod
+		m.insertMode = true
+
+		updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = updated.(model)
+
+		if m.insertMode {
+			t.Error("insertMode should be false after enter on method")
+		}
+	})
+
+	t.Run("URL field", func(t *testing.T) {
+		m := New().(model)
+		m.pane = paneEditor
+		m.activeTab = tabOverview
+		m.editorPart = edURL
+		m.insertMode = true
+		m.applyFocus()
+
+		updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = updated.(model)
+
+		if m.insertMode {
+			t.Error("insertMode should be false after enter on URL")
+		}
+	})
+}
+
+// TestEnterExitsInsertModeInStructuredHeaders tests that enter exits insert mode in structured headers
+func TestEnterExitsInsertModeInStructuredHeaders(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabHeaders
+	m.editorPart = edHeaders
+	m.headersRaw = false
+	m.insertMode = true
+	m.applyFocus()
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = updated.(model)
+
+	if m.insertMode {
+		t.Error("insertMode should be false after enter in structured headers")
+	}
+}
+
+// TestEnterDoesNotExitInsertModeInRawHeaders tests that enter is passed to textarea in raw mode
+func TestEnterDoesNotExitInsertModeInRawHeaders(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabHeaders
+	m.editorPart = edHeaders
+	m.headersRaw = true
+	m.insertMode = true
+	m.applyFocus()
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = updated.(model)
+
+	// Should still be in insert mode (enter goes to textarea)
+	if !m.insertMode {
+		t.Error("insertMode should remain true after enter in raw headers mode")
+	}
+}
+
+// TestEnterDoesNotExitInsertModeInBody tests that enter is passed to body textarea
+func TestEnterDoesNotExitInsertModeInBody(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabBody
+	m.editorPart = edBody
+	m.insertMode = true
+	m.applyFocus()
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = updated.(model)
+
+	// Should still be in insert mode (enter goes to textarea)
+	if !m.insertMode {
+		t.Error("insertMode should remain true after enter in body")
+	}
+}
