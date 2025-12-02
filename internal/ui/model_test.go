@@ -439,10 +439,14 @@ func TestEnterKeyRequiresURL(t *testing.T) {
 
 // TestEnterKeyLoadsItemFromSidebar tests that enter key loads selected item in sidebar
 func TestEnterKeyLoadsItemFromSidebar(t *testing.T) {
+	// Use temp dir so we don't write to real history file
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+
 	m := New().(model)
 	m.pane = paneSidebar
 
-	// Add a history item to load
+	// Add a history item to load (uses temp dir)
 	m.addToHistoryAndSave("GET", "https://httpbin.org/get", "", nil)
 
 	// Press enter to load the first item

@@ -227,8 +227,11 @@ func TestSidebarRightLeftNavigation(t *testing.T) {
 
 // TestHistoryRecordedOnSend tests that history is recorded when sending a request
 func TestHistoryRecordedOnSend(t *testing.T) {
+	// Use temp dir so we don't write to real history file
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+
 	m := New().(model)
-	// Clear any existing history from previous test runs
 	m.history = nil
 	m.pane = paneEditor
 	m.url.SetValue("https://httpbin.org/get")
@@ -254,7 +257,12 @@ func TestHistoryRecordedOnSend(t *testing.T) {
 
 // TestHistoryWithHeaders tests that headers are recorded in history
 func TestHistoryWithHeaders(t *testing.T) {
+	// Use temp dir so we don't write to real history file
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+
 	m := New().(model)
+	m.history = nil
 	m.pane = paneEditor
 	m.url.SetValue("https://httpbin.org/post")
 	m.setMethod("POST")
@@ -277,10 +285,14 @@ func TestHistoryWithHeaders(t *testing.T) {
 
 // TestLoadFromHistoryWithHeaders tests that headers are loaded from history
 func TestLoadFromHistoryWithHeaders(t *testing.T) {
+	// Use temp dir so we don't write to real history file
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+
 	m := New().(model)
 	m.pane = paneSidebar
 
-	// Add a history item with headers
+	// Add a history item with headers (uses temp dir)
 	m.addToHistoryAndSave("POST", "https://api.example.com", `{"data":"test"}`, map[string]string{
 		"Authorization": "Bearer token",
 		"Content-Type":  "application/json",
@@ -316,13 +328,9 @@ func TestLoadFromHistoryWithHeaders(t *testing.T) {
 
 // TestSaveAndLoadHistory tests that history can be saved and loaded from disk
 func TestSaveAndLoadHistory(t *testing.T) {
-	// Create a temp directory for testing
+	// Use temp dir so we don't write to real history file
 	tmpDir := t.TempDir()
-	origHome := os.Getenv("HOME")
 	t.Setenv("HOME", tmpDir)
-	defer func() {
-		_ = os.Setenv("HOME", origHome)
-	}()
 
 	// Create test history
 	entries := []historyEntry{
