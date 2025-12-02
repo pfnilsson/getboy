@@ -7,13 +7,13 @@ import (
 
 func TestExpandEnvVars(t *testing.T) {
 	// Set up test environment variables
-	os.Setenv("TEST_VAR", "test_value")
-	os.Setenv("API_KEY", "secret123")
-	os.Setenv("EMPTY_VAR", "")
+	_ = os.Setenv("TEST_VAR", "test_value")
+	_ = os.Setenv("API_KEY", "secret123")
+	_ = os.Setenv("EMPTY_VAR", "")
 	defer func() {
-		os.Unsetenv("TEST_VAR")
-		os.Unsetenv("API_KEY")
-		os.Unsetenv("EMPTY_VAR")
+		_ = os.Unsetenv("TEST_VAR")
+		_ = os.Unsetenv("API_KEY")
+		_ = os.Unsetenv("EMPTY_VAR")
 	}()
 
 	tests := []struct {

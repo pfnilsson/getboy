@@ -9,51 +9,51 @@ import (
 // TestLayoutDimensions tests that panes maintain correct dimensions
 func TestLayoutDimensions(t *testing.T) {
 	tests := []struct {
-		name         string
-		width        int
-		height       int
-		wantSidebar  int
-		wantRightMin int  // Minimum right pane width
+		name          string
+		width         int
+		height        int
+		wantSidebar   int
+		wantRightMin  int  // Minimum right pane width
 		allowOverflow bool // Allow total to exceed terminal width
 	}{
 		{
-			name:         "standard terminal",
-			width:        120,
-			height:       40,
-			wantSidebar:  28,
-			wantRightMin: 30,
+			name:          "standard terminal",
+			width:         120,
+			height:        40,
+			wantSidebar:   28,
+			wantRightMin:  30,
 			allowOverflow: false,
 		},
 		{
-			name:         "wide terminal",
-			width:        200,
-			height:       60,
-			wantSidebar:  28,
-			wantRightMin: 30,
+			name:          "wide terminal",
+			width:         200,
+			height:        60,
+			wantSidebar:   28,
+			wantRightMin:  30,
 			allowOverflow: false,
 		},
 		{
-			name:         "narrow terminal",
-			width:        80,
-			height:       24,
-			wantSidebar:  28,
-			wantRightMin: 30,
+			name:          "narrow terminal",
+			width:         80,
+			height:        24,
+			wantSidebar:   28,
+			wantRightMin:  30,
 			allowOverflow: false,
 		},
 		{
-			name:         "minimum usable terminal",
-			width:        66, // 28 + 30 + 4 + buffer
-			height:       20,
-			wantSidebar:  28,
-			wantRightMin: 30,
+			name:          "minimum usable terminal",
+			width:         66, // 28 + 30 + 4 + buffer
+			height:        20,
+			wantSidebar:   28,
+			wantRightMin:  30,
 			allowOverflow: false,
 		},
 		{
-			name:         "below minimum terminal",
-			width:        50,
-			height:       20,
-			wantSidebar:  28,
-			wantRightMin: 30,
+			name:          "below minimum terminal",
+			width:         50,
+			height:        20,
+			wantSidebar:   28,
+			wantRightMin:  30,
 			allowOverflow: true, // App maintains minimum sizes even if terminal is too small
 		},
 	}
@@ -298,14 +298,11 @@ func TestEditorContentFitsInPane(t *testing.T) {
 			m = updated.(model)
 
 			contentHeight := max(m.height-1, 6)
-			editorHeight := contentHeight / 2
-			if editorHeight < 5 {
-				editorHeight = 5
-			}
+			editorHeight := max(contentHeight/2, 5)
 
 			// Calculate the lines used in the editor view (tabs are now in title bar)
-			methodURLLines := 1   // method + URL row
-			bodyTitleLines := 1   // "Body" title
+			methodURLLines := 1 // method + URL row
+			bodyTitleLines := 1 // "Body" title
 			bodyContentLines := m.body.Height()
 
 			totalEditorLines := methodURLLines + bodyTitleLines + bodyContentLines

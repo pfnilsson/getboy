@@ -57,7 +57,7 @@ func TestDoHTTP(t *testing.T) {
 			}
 
 			// Echo back the request body
-			var data map[string]interface{}
+			var data map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 				t.Errorf("failed to decode body: %v", err)
 			}
@@ -160,8 +160,10 @@ func TestDoHTTP(t *testing.T) {
 	})
 
 	t.Run("expands env vars in headers", func(t *testing.T) {
-		os.Setenv("TEST_TOKEN", "env_token_value")
-		defer os.Unsetenv("TEST_TOKEN")
+		_ = os.Setenv("TEST_TOKEN", "env_token_value")
+		defer func() {
+			_ = os.Unsetenv("TEST_TOKEN")
+		}()
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			auth := r.Header.Get("Authorization")
@@ -188,11 +190,13 @@ func TestDoHTTP(t *testing.T) {
 	})
 
 	t.Run("expands env vars in body", func(t *testing.T) {
-		os.Setenv("TEST_VALUE", "expanded_value")
-		defer os.Unsetenv("TEST_VALUE")
+		_ = os.Setenv("TEST_VALUE", "expanded_value")
+		defer func() {
+			_ = os.Unsetenv("TEST_VALUE")
+		}()
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var data map[string]interface{}
+			var data map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 				t.Errorf("failed to decode body: %v", err)
 			}

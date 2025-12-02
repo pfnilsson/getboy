@@ -26,10 +26,7 @@ func (m model) contentHeight() int {
 // editorHeight returns the height for the editor/request pane
 func (m model) editorHeight() int {
 	contentHeight := m.contentHeight()
-	editorHeight := contentHeight / 2
-	if editorHeight < 5 {
-		editorHeight = 5
-	}
+	editorHeight := max(contentHeight/2, 5)
 	return editorHeight
 }
 
@@ -37,10 +34,7 @@ func (m model) editorHeight() int {
 func (m model) responseHeight() int {
 	contentHeight := m.contentHeight()
 	editorHeight := m.editorHeight()
-	respHeight := contentHeight - editorHeight
-	if respHeight < 3 {
-		respHeight = 3
-	}
+	respHeight := max(contentHeight-editorHeight, 3)
 	return respHeight
 }
 

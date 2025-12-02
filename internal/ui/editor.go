@@ -125,13 +125,7 @@ func (m model) viewHeadersTab() string {
 		startIdx := 0
 		if totalHeaders > visibleRows {
 			// Center the selected row in the visible window
-			startIdx = m.headerIdx - visibleRows/2
-			if startIdx < 0 {
-				startIdx = 0
-			}
-			if startIdx > totalHeaders-visibleRows {
-				startIdx = totalHeaders - visibleRows
-			}
+			startIdx = min(max(m.headerIdx-visibleRows/2, 0), totalHeaders-visibleRows)
 		}
 		endIdx := min(startIdx+visibleRows, totalHeaders)
 
