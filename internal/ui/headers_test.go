@@ -290,3 +290,114 @@ func TestHeadersViewRendering(t *testing.T) {
 		t.Error("view should contain mode toggle indicator [Structured / Raw]")
 	}
 }
+
+// TestHeadersRawModeTextareaInput tests that keys go to textarea in raw mode
+func TestHeadersRawModeTextareaInput(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabHeaders
+	m.editorPart = edHeaders
+	m.headersRaw = true
+	m.insertMode = true
+	m.applyFocus()
+
+	// Type a character - should go to raw textarea
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'X'}})
+	m = updated.(model)
+
+	if m.headersRawText.Value() != "X" {
+		t.Errorf("headersRawText.Value() = %q, want 'X'", m.headersRawText.Value())
+	}
+}
+
+// TestHeadersRawModeSync tests that content syncs when toggling modes
+func TestHeadersRawModeSync(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabHeaders
+
+	// Set up structured headers
+	m.headers[0].key.SetValue("Content-Type")
+	m.headers[0].value.SetValue("application/json")
+	m.headers = append(m.headers, newHeaderRow())
+	m.headers[1].key.SetValue("Authorization")
+	m.headers[1].value.SetValue("Bearer token")
+
+	// Toggle to raw mode - should sync content
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	m = updated.(model)
+
+	rawValue := m.headersRawText.Value()
+	if !strings.Contains(rawValue, "Content-Type: application/json") {
+		t.Error("raw textarea should contain 'Content-Type: application/json'")
+	}
+	if !strings.Contains(rawValue, "Authorization: Bearer token") {
+		t.Error("raw textarea should contain 'Authorization: Bearer token'")
+	}
+
+	// Modify raw text
+	m.headersRawText.SetValue("X-Custom: header\nX-Another: value")
+
+	// Toggle back to structured mode - should parse raw text
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	m = updated.(model)
+
+	if len(m.headers) != 2 {
+		t.Errorf("expected 2 headers after parsing, got %d", len(m.headers))
+	}
+	if m.headers[0].key.Value() != "X-Custom" {
+		t.Errorf("first header key = %q, want 'X-Custom'", m.headers[0].key.Value())
+	}
+	if m.headers[0].value.Value() != "header" {
+		t.Errorf("first header value = %q, want 'header'", m.headers[0].value.Value())
+	}
+}
+
+// TestHeadersRawModeFocus tests that applyFocus focuses raw textarea in raw mode
+func TestHeadersRawModeFocus(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabHeaders
+	m.editorPart = edHeaders
+	m.headersRaw = true
+	m.insertMode = true
+
+	m.applyFocus()
+
+	if !m.headersRawText.Focused() {
+		t.Error("headersRawText should be focused in raw mode with insert mode")
+	}
+
+	// Structured headers should not be focused
+	for i, h := range m.headers {
+		if h.key.Focused() {
+			t.Errorf("header[%d].key should not be focused in raw mode", i)
+		}
+		if h.value.Focused() {
+			t.Errorf("header[%d].value should not be focused in raw mode", i)
+		}
+	}
+}
+
+// TestHeadersRawModeNoTabNavigation tests that tab doesn't navigate fields in raw mode
+func TestHeadersRawModeNoTabNavigation(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabHeaders
+	m.editorPart = edHeaders
+	m.headersRaw = true
+	m.insertMode = true
+	m.headerField = headerKey
+	m.applyFocus()
+
+	// Press tab - should be passed to textarea, not change headerField
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
+	m = updated.(model)
+
+	// Tab should insert into textarea (or be ignored by textarea)
+	// but should NOT navigate between key/value fields
+	// The headerField should remain unchanged (raw mode ignores structured navigation)
+	if m.headerField != headerKey {
+		t.Errorf("headerField changed in raw mode, got %v", m.headerField)
+	}
+}
