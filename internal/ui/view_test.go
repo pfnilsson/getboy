@@ -185,14 +185,7 @@ func TestViewEditorSelectionIndicator(t *testing.T) {
 		t.Error("editor view does not show selection indicator for URL")
 	}
 
-	// Test body tab - body selection
-	m.activeTab = tabBody
-	m.editorPart = edBody
-	bodyView := m.viewBodyTab()
-
-	if !strings.Contains(bodyView, "> Body") {
-		t.Error("body tab does not show selection indicator for body")
-	}
+	// Note: Body tab no longer has a label/selection indicator
 }
 
 // TestViewNoSelectionIndicatorInInsertMode tests that selection indicator is hidden in insert mode

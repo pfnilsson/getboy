@@ -203,34 +203,17 @@ func (m model) viewHeadersTab() string {
 
 // viewBodyTab renders the body tab with the request body textarea
 func (m model) viewBodyTab() string {
-	selectedStyle := lipgloss.NewStyle().Foreground(theme.Current.ListSelectedText)
-	normalStyle := lipgloss.NewStyle()
-
-	bodyStyle := normalStyle
-	bodyPrefix := "  "
-
 	isEditing := m.pane == paneEditor && m.insertMode && m.activeTab == tabBody
 
-	if m.pane == paneEditor && !m.insertMode && m.activeTab == tabBody {
-		bodyPrefix = "> "
-		bodyStyle = selectedStyle
-	}
-
-	bodyTitle := bodyStyle.Render(bodyPrefix + "Body")
-
-	var bodyView string
 	if isEditing {
 		// Show plain textarea when editing
-		bodyView = m.body.View()
-	} else {
-		// Show syntax-highlighted content when not editing
-		content := m.body.Value()
-		if content == "" {
-			bodyView = m.body.View() // Show placeholder
-		} else {
-			bodyView = m.highlightBodyContent(content)
-		}
+		return m.body.View()
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, bodyTitle, bodyView)
+	// Show syntax-highlighted content when not editing
+	content := m.body.Value()
+	if content == "" {
+		return m.body.View() // Show placeholder
+	}
+	return m.highlightBodyContent(content)
 }

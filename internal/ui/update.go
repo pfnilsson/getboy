@@ -48,7 +48,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.url, cmd = m.url.Update(msg)
 			case edHeaders:
 				if m.headersRaw {
-					// Raw mode - pass all keys to the textarea
+					// Raw mode - convert tab to actual tab character
+					if msg.String() == "tab" {
+						m.headersRawText.InsertString("\t")
+						return m, nil
+					}
 					m.headersRawText, cmd = m.headersRawText.Update(msg)
 					return m, cmd
 				}
@@ -103,6 +107,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, cmd
 			case edBody:
+				// Convert tab key to actual tab character
+				if msg.String() == "tab" {
+					m.body.InsertString("\t")
+					return m, nil
+				}
 				m.body, cmd = m.body.Update(msg)
 			}
 			return m, cmd

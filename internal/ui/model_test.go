@@ -900,6 +900,25 @@ func TestEnterDoesNotExitInsertModeInBody(t *testing.T) {
 	}
 }
 
+// TestTabInsertsIndentInBody tests that tab key inserts indentation in body
+func TestTabInsertsIndentInBody(t *testing.T) {
+	m := New().(model)
+	m.pane = paneEditor
+	m.activeTab = tabBody
+	m.editorPart = edBody
+	m.insertMode = true
+	m.applyFocus()
+
+	// Press tab - should insert indentation (textarea uses soft tabs = spaces)
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
+	m = updated.(model)
+
+	// Textarea converts \t to spaces (soft tabs)
+	if m.body.Value() == "" {
+		t.Error("tab should insert indentation in body")
+	}
+}
+
 // TestGetContentType tests case-insensitive Content-Type header lookup
 func TestGetContentType(t *testing.T) {
 	tests := []struct {

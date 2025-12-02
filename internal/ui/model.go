@@ -124,6 +124,9 @@ func New() tea.Model {
 	t.SetHeight(6)
 	t.Placeholder = "Request body (optional)"
 	t.ShowLineNumbers = false
+	t.Prompt = ""
+	t.FocusedStyle.CursorLine = lipgloss.NewStyle()
+	t.BlurredStyle.CursorLine = lipgloss.NewStyle()
 
 	// Raw headers textarea
 	rawHeaders := textarea.New()
